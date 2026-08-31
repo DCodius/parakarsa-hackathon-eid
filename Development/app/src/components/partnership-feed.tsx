@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { partnerships, type Partnership } from "@/lib/data";
 import { epScore } from "./dna-radar";
-import { Badge, Button, Chip, VerifiedTick } from "./ui";
+import { Badge, Chip, EpGate, VerifiedTick } from "./ui";
 
 const filters = ["Semua", "Penawaran", "Permintaan"] as const;
 
@@ -48,8 +48,6 @@ export function PartnershipFeed() {
 }
 
 function ListingCard({ listing }: { listing: Partnership }) {
-  /* PRD 2.1.3 gate: RFQ hanya terbuka bila EP Score profil memenuhi ambang listing. */
-  const locked = listing.epMin > epScore;
   const offer = listing.kind === "Penawaran";
 
   return (
@@ -95,16 +93,7 @@ function ListingCard({ listing }: { listing: Partnership }) {
         </div>
 
         <div className="mt-5 border-t border-hairline pt-4">
-          {locked ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button tone="outline" disabled className="cursor-not-allowed opacity-60">
-                Terkunci
-              </Button>
-              <p className="text-sm text-ink-muted">
-                Butuh EP Score minimal {listing.epMin} · skor profil Anda {epScore}.
-              </p>
-            </div>
-          ) : (
+          <EpGate epMin={listing.epMin} score={epScore}>
             <details className="group">
               <summary className="inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:bg-primary-700">
                 {offer ? "Ajukan RFQ" : "Kirim Proposal"}
@@ -112,7 +101,7 @@ function ListingCard({ listing }: { listing: Partnership }) {
               </summary>
               <RfqDraft listing={listing} />
             </details>
-          )}
+          </EpGate>
         </div>
       </div>
     </article>

@@ -467,3 +467,151 @@ export const partnerships: Partnership[] = [
     epMin: 65,
   },
 ];
+
+/**
+ * PRD 2.1.3 — Halaman Hire: gerbang kurasi ke program yang dibuka mitra
+ * Hexa-Helix. Enam helix = enam jenis penyelenggara; `epMin` adalah gate yang
+ * menentukan apakah tombol daftar terbuka.
+ */
+export const helices = [
+  "Pemerintah",
+  "Universitas",
+  "Investor",
+  "Media",
+  "Komunitas",
+  "Bisnis",
+] as const;
+
+export type Helix = (typeof helices)[number];
+
+export type Program = {
+  slug: string;
+  title: string;
+  partner: string;
+  helix: Helix;
+  category: string;
+  image: string;
+  summary: string;
+  benefits: string[];
+  quota: string;
+  deadline: string;
+  format: string;
+  epMin: number;
+};
+
+export const programs: Program[] = [
+  {
+    slug: "business-matching-agregator-ritel",
+    title: "Business Matching Agregator Ritel Nasional",
+    partner: "Konsorsium Ritel Nusantara",
+    helix: "Bisnis",
+    category: "Business Matching",
+    image: "/karya/k11.jpg",
+    summary:
+      "Sesi pertemuan terjadwal dengan tim buyer dari empat jaringan ritel modern. Kurasi produk dilakukan sebelum hari-H, jadi setiap slot bertemu buyer yang memang mencari kategori Anda.",
+    benefits: [
+      "6 slot pertemuan buyer @30 menit",
+      "Pendampingan penyusunan price list B2B",
+      "Prioritas onboarding ke katalog agregator",
+    ],
+    quota: "40 UMKM terpilih",
+    deadline: "20 September 2026",
+    format: "Luring · Jakarta",
+    epMin: 65,
+  },
+  {
+    slug: "pitching-day-venture-capital",
+    title: "Pitching Day ke Venture Capital",
+    partner: "Nusantara Ventures & 3 VC mitra",
+    helix: "Investor",
+    category: "Pitching ke VC",
+    image: "/karya/k09.jpg",
+    summary:
+      "Panggung pitching tertutup untuk usaha yang sudah punya traksi pendapatan dan tata kelola rapi. Materi due diligence awal ditarik langsung dari kredensial e.id Anda.",
+    benefits: [
+      "Pitch 8 menit di hadapan panel investor",
+      "Klinik penyusunan data room",
+      "Umpan balik tertulis dari tiap investor",
+    ],
+    quota: "12 UMKM terpilih",
+    deadline: "5 Oktober 2026",
+    format: "Luring · Jakarta",
+    epMin: 80,
+  },
+  {
+    slug: "inkubasi-kampus-batch-5",
+    title: "Inkubasi Kampus Batch 5",
+    partner: "Pusat Inkubator Bisnis UGM",
+    helix: "Universitas",
+    category: "Inkubasi Kampus",
+    image: "/karya/k13.jpg",
+    summary:
+      "Program pendampingan 12 minggu bersama mentor kampus dan tim riset produk. Fokus pada perbaikan proses produksi dan kesiapan skala.",
+    benefits: [
+      "Mentor pendamping 1-on-1 tiap minggu",
+      "Akses laboratorium uji produk",
+      "Hibah pengembangan Rp 15 juta",
+    ],
+    quota: "25 UMKM terpilih",
+    deadline: "12 September 2026",
+    format: "Hibrida · Yogyakarta",
+    epMin: 55,
+  },
+  {
+    slug: "kurikulum-toe-lanjutan",
+    title: "Kurikulum ToE Lanjutan",
+    partner: "Komunitas Wirausaha Nusantara",
+    helix: "Komunitas",
+    category: "Pelatihan ToE",
+    image: "/karya/k06.jpg",
+    summary:
+      "Kelanjutan Training of Entrepreneur untuk yang sudah menuntaskan modul dasar. Kelulusan menerbitkan kredensial baru yang langsung menaikkan pilar Tata Kelola di DNA Anda.",
+    benefits: [
+      "8 modul lanjutan tata kelola & keuangan",
+      "Kredensial ToE Lanjutan terverifikasi e.id",
+      "Akses seumur hidup ke rekaman kelas",
+    ],
+    quota: "Tanpa kuota",
+    deadline: "Pendaftaran sepanjang tahun",
+    format: "Daring",
+    epMin: 40,
+  },
+  {
+    slug: "fasilitasi-sertifikasi-halal-sni",
+    title: "Fasilitasi Sertifikasi Halal & SNI",
+    partner: "Dinas Koperasi & UKM Provinsi",
+    helix: "Pemerintah",
+    category: "Fasilitasi Legalitas",
+    image: "/karya/k19.jpg",
+    summary:
+      "Pembiayaan penuh biaya audit dan pendampingan dokumen untuk UMKM yang produknya sudah siap edar tapi belum tersertifikasi.",
+    benefits: [
+      "Biaya audit ditanggung penuh",
+      "Pendampingan dokumen 6 minggu",
+      "Sertifikat terbit sebagai kredensial e.id",
+    ],
+    quota: "150 UMKM",
+    deadline: "30 September 2026",
+    format: "Hibrida · per provinsi",
+    epMin: 50,
+  },
+  {
+    slug: "liputan-brand-story",
+    title: "Liputan & Produksi Brand Story",
+    partner: "Kanal Media Kriya Indonesia",
+    helix: "Media",
+    category: "Eksposur Media",
+    image: "/karya/k15.jpg",
+    summary:
+      "Produksi profil video dan artikel panjang tentang usaha Anda, disiarkan di kanal mitra media dengan jangkauan 2 juta pembaca per bulan.",
+    benefits: [
+      "Sesi foto & video produk di lokasi",
+      "Artikel profil di kanal mitra",
+      "Aset visual bebas pakai untuk katalog",
+    ],
+    quota: "18 UMKM per kuartal",
+    deadline: "25 September 2026",
+    format: "Luring · lokasi usaha",
+    epMin: 60,
+  },
+];

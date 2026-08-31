@@ -93,3 +93,30 @@ export function SectionTitle({
     <h2 className={`display text-2xl text-primary md:text-3xl ${className}`}>{children}</h2>
   );
 }
+
+/**
+ * PRD gate: aksi hanya terbuka bila EP Score profil mencapai ambang program.
+ * Skor dioper sebagai prop agar modul ini tetap aman dipakai server component.
+ */
+export function EpGate({
+  epMin,
+  score,
+  children,
+}: {
+  epMin: number;
+  score: number;
+  children: React.ReactNode;
+}) {
+  if (score >= epMin) return <>{children}</>;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button tone="outline" disabled className="cursor-not-allowed opacity-60">
+        Terkunci
+      </Button>
+      <p className="text-sm text-ink-muted">
+        Butuh EP Score minimal {epMin} · skor profil Anda {score}.
+      </p>
+    </div>
+  );
+}

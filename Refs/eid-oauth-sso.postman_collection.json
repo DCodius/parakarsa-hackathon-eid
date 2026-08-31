@@ -1,0 +1,531 @@
+{
+  "info": {
+    "name": "EID OAuth SSO API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "This is a REST API use for interact with backend service provider\n\n---\n\n**How to use this collection**\n\n1. Fill the collection variables: `oauth_base_url`, `oauth_client_id`, `oauth_client_secret`.\n2. Call **Get Access Token** (Authentication folder) and copy `data.token` from the response.\n3. Paste it into the `oauth_access_token` variable — every request sends it automatically as a Bearer token.\n\nEach request includes saved example responses (success and error cases). Values like `example-...` and all-zero UUIDs are placeholders — replace them with your own data."
+  },
+  "item": [
+    {
+      "name": "OAuth",
+      "description": "OAuth 2.0 SSO flow, in call order: fetch app info, verify the client, exchange the authorization code for a token, then read the user profile.",
+      "item": [
+        {
+          "name": "Verify Client ID and Callback URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Browser entry point of the SSO flow: redirect the user's browser here. e.id validates the `client_id` and `callback_url`, then responds with a **302 redirect** — to the e.id login page when the client is valid, or to the unauthorized-client page when it is not.",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{oauth_base_url}}/api/v1.1/oauth/verify",
+              "host": [
+                "{{oauth_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1.1",
+                "oauth",
+                "verify"
+              ],
+              "query": [
+                {
+                  "key": "client_id",
+                  "value": "example-client-id",
+                  "description": "Unique application ID registered in the OAuth system.",
+                  "disabled": true
+                },
+                {
+                  "key": "callback_url",
+                  "value": "https://your-app.com/callback",
+                  "description": "Callback URL that will be used after authentication.",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "302 Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "description": "Browser entry point of the SSO flow: redirect the user's browser here. e.id validates the `client_id` and `callback_url`, then responds with a **302 redirect** — to the e.id login page when the client is valid, or to the unauthorized-client page when it is not.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/verify",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "verify"
+                  ],
+                  "query": [
+                    {
+                      "key": "client_id",
+                      "value": "example-client-id",
+                      "description": "Unique application ID registered in the OAuth system.",
+                      "disabled": true
+                    },
+                    {
+                      "key": "callback_url",
+                      "value": "https://your-app.com/callback",
+                      "description": "Callback URL that will be used after authentication.",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Found",
+              "code": 302,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Get OAuth Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "description": "This endpoint is used to obtain an OAuth token after the authorization process is successful. The client must send client_id, client_secret, code, and redirect_uri.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{oauth_client_id}}\",\n  \"client_secret\": \"{{oauth_client_secret}}\",\n  \"code\": \"example-authorization-code\",\n  \"redirect_uri\": \"https://e.id/callback\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-token",
+              "host": [
+                "{{oauth_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1.1",
+                "oauth",
+                "get-token"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "description": "This endpoint is used to obtain an OAuth token after the authorization process is successful. The client must send client_id, client_secret, code, and redirect_uri.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"{{oauth_client_id}}\",\n  \"client_secret\": \"{{oauth_client_secret}}\",\n  \"code\": \"example-authorization-code\",\n  \"redirect_uri\": \"https://e.id/callback\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-token",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "get-token"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": true,\n  \"message\": \"success\",\n  \"data\": {\n    \"token_type\": \"Bearer\",\n    \"token\": \"example-access-token\",\n    \"expired_date\": \"2026-07-20T03:01:57Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "description": "This endpoint is used to obtain an OAuth token after the authorization process is successful. The client must send client_id, client_secret, code, and redirect_uri.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"{{oauth_client_id}}\",\n  \"client_secret\": \"{{oauth_client_secret}}\",\n  \"code\": \"example-authorization-code\",\n  \"redirect_uri\": \"https://e.id/callback\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-token",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "get-token"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": false,\n  \"message\": \"OAUTH.INVALID_OR_EXPIRED_CODE\",\n  \"data\": null\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "description": "This endpoint is used to obtain an OAuth token after the authorization process is successful. The client must send client_id, client_secret, code, and redirect_uri.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"{{oauth_client_id}}\",\n  \"client_secret\": \"{{oauth_client_secret}}\",\n  \"code\": \"example-authorization-code\",\n  \"redirect_uri\": \"https://e.id/callback\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-token",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "get-token"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": false,\n  \"message\": \"OAUTH.INVALID_CLIENT_CREDENTIALS\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Profile Data by Scope",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "This endpoint is used to retrieve user profile data based on the given scope. The request must include an Authorization header with a valid OAuth token.",
+            "url": {
+              "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-profile",
+              "host": [
+                "{{oauth_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1.1",
+                "oauth",
+                "get-profile"
+              ],
+              "query": [
+                {
+                  "key": "scope",
+                  "value": "email:profile",
+                  "description": "The scope that determines the returned profile data (e.g., email:profile).",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "description": "This endpoint is used to retrieve user profile data based on the given scope. The request must include an Authorization header with a valid OAuth token.",
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-profile",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "get-profile"
+                  ],
+                  "query": [
+                    {
+                      "key": "scope",
+                      "value": "email:profile",
+                      "description": "The scope that determines the returned profile data (e.g., email:profile).",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": true,\n  \"message\": \"success\",\n  \"data\": {\n    \"email\": \"user@example.com\",\n    \"profile\": {\n      \"address\": \"\",\n      \"avatar\": \"\",\n      \"countryphonecode\": \"62\",\n      \"fullname\": \"Example Name\",\n      \"phonenumber\": \"81234567890\",\n      \"tier\": 2\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "description": "This endpoint is used to retrieve user profile data based on the given scope. The request must include an Authorization header with a valid OAuth token.",
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/get-profile",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "get-profile"
+                  ],
+                  "query": [
+                    {
+                      "key": "scope",
+                      "value": "email:profile",
+                      "description": "The scope that determines the returned profile data (e.g., email:profile).",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": false,\n  \"message\": \"UNAUTHORIZATION\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get App Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "This endpoint is used to get client data by clientId and callbackUrl.",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{oauth_base_url}}/api/v1.1/oauth/client/:client_id/:callback_url",
+              "host": [
+                "{{oauth_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1.1",
+                "oauth",
+                "client",
+                ":client_id",
+                ":callback_url"
+              ],
+              "variable": [
+                {
+                  "key": "client_id",
+                  "value": "",
+                  "description": "Unique application ID registered in the OAuth system."
+                },
+                {
+                  "key": "callback_url",
+                  "value": "",
+                  "description": "Callback URL that will be used after authentication."
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "description": "This endpoint is used to get client data by clientId and callbackUrl.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/client/:client_id/:callback_url",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "client",
+                    ":client_id",
+                    ":callback_url"
+                  ],
+                  "variable": [
+                    {
+                      "key": "client_id",
+                      "value": "",
+                      "description": "Unique application ID registered in the OAuth system."
+                    },
+                    {
+                      "key": "callback_url",
+                      "value": "",
+                      "description": "Callback URL that will be used after authentication."
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": true,\n  \"message\": \"success\",\n  \"data\": {\n    \"app_name\": \"Example App\",\n    \"icon_url\": \"https://example.com/oauth-icon.png\",\n    \"callback_url\": \"https://example.com/callback\",\n    \"scopes\": [\n      \"email\",\n      \"profile\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "description": "This endpoint is used to get client data by clientId and callbackUrl.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{oauth_base_url}}/api/v1.1/oauth/client/:client_id/:callback_url",
+                  "host": [
+                    "{{oauth_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1.1",
+                    "oauth",
+                    "client",
+                    ":client_id",
+                    ":callback_url"
+                  ],
+                  "variable": [
+                    {
+                      "key": "client_id",
+                      "value": "",
+                      "description": "Unique application ID registered in the OAuth system."
+                    },
+                    {
+                      "key": "callback_url",
+                      "value": "",
+                      "description": "Callback URL that will be used after authentication."
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": false,\n  \"message\": \"OAUTH.CLIENT_NOT_FOUND\",\n  \"data\": null\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{oauth_access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "oauth_base_url",
+      "value": "https://gateway-sandbox.e.id"
+    },
+    {
+      "key": "oauth_client_id",
+      "value": ""
+    },
+    {
+      "key": "oauth_client_secret",
+      "value": ""
+    },
+    {
+      "key": "oauth_access_token",
+      "value": ""
+    }
+  ]
+}

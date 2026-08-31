@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     globals: true,
     root: './',
-    include: ['**/*.spec.ts'],
+    // Seluruh tes proyek ini tinggal di test/ sebagai *.e2e-spec.ts. Keduanya
+    // ikut supaya `npm test` menjalankan semuanya, bukan gagal tanpa berkas.
+    include: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
   },
 });

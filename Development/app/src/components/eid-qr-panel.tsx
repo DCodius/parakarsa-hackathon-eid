@@ -9,6 +9,7 @@ import {
   advanceVerification,
   createVerification,
   readVerification,
+  watchVerification,
   type VerificationSession,
 } from "@/lib/verifier";
 
@@ -17,7 +18,8 @@ import {
  * QR, status, dan klaim seluruhnya berasal dari Verifier API di backend; panel
  * ini hanya menggambar dan menanyakan statusnya sampai holder menyetujui.
  */
-const POLL_MS = 2000;
+/** WebSocket yang membawa kabar cepat; polling hanya jaring pengaman. */
+const POLL_MS = 8000;
 
 const steps = [
   "Buka aplikasi Dompet e.id di ponsel Anda.",
@@ -100,6 +102,12 @@ export function EidQrPanel() {
   }, [session]);
 
   const pollable = session?.status === "waiting" || session?.status === "scanned";
+  const sessionId = session?.id;
+
+  useEffect(() => {
+    if (!sessionId || !pollable) return;
+    return watchVerification(sessionId, (update) => setSession(update));
+  }, [sessionId, pollable]);
 
   useEffect(() => {
     if (!session || !pollable) return;
@@ -113,10 +121,11 @@ export function EidQrPanel() {
     return () => clearInterval(timer);
   }, [session, pollable]);
 
-  // Cookie sesi sudah dipasang backend saat status berubah jadi approved;
-  // di sini tinggal memindahkan pengguna ke profilnya.
+  // Kabar lewat WebSocket tidak bisa membawa cookie, jadi satu pembacaan REST
+  // dipakai untuk mengambil cookie sesinya sebelum berpindah halaman.
   useEffect(() => {
     if (session?.status !== "approved" || !session.signedIn) return;
+    void readVerification(session.id);
     const timer = setTimeout(() => {
       router.push("/profile");
       router.refresh();

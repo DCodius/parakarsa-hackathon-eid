@@ -10,6 +10,7 @@ import { EidService } from './eid/eid.service.js';
 import { HealthController } from './health.controller.js';
 import { IssuanceController } from './issuance/issuance.controller.js';
 import { VerifierController } from './verifier/verifier.controller.js';
+import { VerificationGateway } from './verifier/verification.gateway.js';
 import { VerifierService } from './verifier/verifier.service.js';
 
 @Module({
@@ -17,6 +18,12 @@ import { VerifierService } from './verifier/verifier.service.js';
   controllers: [AuthController, IssuanceController, VerifierController, ConsentController, HealthController],
   providers: [
     RateLimitGuard,
-    DatabaseService, AccountsService, ConsentService, EidService, VerifierService],
+    DatabaseService,
+    AccountsService,
+    ConsentService,
+    EidService,
+    VerifierService,
+    VerificationGateway,
+  ],
 })
 export class AppModule {}

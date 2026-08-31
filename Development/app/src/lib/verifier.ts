@@ -1,3 +1,4 @@
+import { io, type Socket } from "socket.io-client";
 import { apiUrl } from "./api";
 
 /** Cermin PublicSession di backend (src/verifier/verifier.types.ts). */
@@ -26,3 +27,29 @@ async function call(url: string, method: "GET" | "POST"): Promise<VerificationSe
 export const createVerification = () => call(base, "POST");
 export const readVerification = (id: string) => call(`${base}/${id}`, "GET");
 export const advanceVerification = (id: string) => call(`${base}/${id}/advance`, "POST");
+
+/**
+ * PRD 3.3 — kabar perubahan status datang lewat WebSocket, jadi layar ikut
+ * berubah saat holder menyetujui di ponselnya. Polling tetap dipertahankan
+ * sebagai jaring pengaman bila jaringan lokasi memblokir WebSocket.
+ */
+export function watchVerification(
+  sessionId: string,
+  onUpdate: (session: VerificationSession) => void,
+): () => void {
+  const socket: Socket = io(apiUrl, {
+    path: "/api/socket.io",
+    withCredentials: true,
+    // Tanpa ini socket.io mencoba long-polling dulu; keduanya dibiarkan supaya
+    // wifi yang memblokir upgrade WebSocket tetap dapat kabar.
+    transports: ["websocket", "polling"],
+  });
+
+  socket.on("connect", () => socket.emit("watch", sessionId));
+  socket.on("verification:update", onUpdate);
+
+  return () => {
+    socket.emit("unwatch", sessionId);
+    socket.disconnect();
+  };
+}

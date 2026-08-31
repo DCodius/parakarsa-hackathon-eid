@@ -2,6 +2,7 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { AccountsService } from '../accounts/accounts.service.js';
+import { VerificationGateway } from './verification.gateway.js';
 import type { Envelope } from '../eid/eid.types.js';
 import type {
   PublicSession,
@@ -52,6 +53,7 @@ export class VerifierService {
   constructor(
     private readonly config: ConfigService,
     private readonly accounts: AccountsService,
+    private readonly gateway: VerificationGateway,
   ) {}
 
   private get base(): string {
@@ -190,7 +192,7 @@ export class VerifierService {
     session.proof = payload.signature_proof ?? session.proof;
     this.finalize(session);
     this.logger.log(`Verifikasi ${id}: ${session.status}`);
-    return toPublic(session);
+    return this.announce(session);
   }
 
   /**
@@ -209,7 +211,7 @@ export class VerifierService {
       session.proof = SIMULATED_PROOF;
       this.finalize(session);
     }
-    return toPublic(session);
+    return this.announce(session);
   }
 
   /**
@@ -243,6 +245,16 @@ export class VerifierService {
       proof: session.proof,
       simulated: session.simulated,
     });
+  }
+
+  /**
+   * PRD 3.3 — perubahan status disiarkan ke layar yang sedang menonton sesi ini,
+   * sekaligus dikembalikan ke pemanggil seperti biasa.
+   */
+  private announce(session: VerificationSession): PublicSession {
+    const view = toPublic(session);
+    this.gateway.publish(view);
+    return view;
   }
 
   /** Token sesi hanya boleh keluar lewat cookie, bukan lewat body JSON. */

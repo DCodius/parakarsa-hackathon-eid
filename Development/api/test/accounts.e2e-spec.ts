@@ -10,6 +10,7 @@ import { ConsentController } from '../src/consent/consent.controller.js';
 import { ConsentService } from '../src/consent/consent.service.js';
 import { DatabaseService } from '../src/db/database.service.js';
 import { EidService } from '../src/eid/eid.service.js';
+import { VerificationGateway } from '../src/verifier/verification.gateway.js';
 import { VerifierController } from '../src/verifier/verifier.controller.js';
 import { VerifierService } from '../src/verifier/verifier.service.js';
 
@@ -33,7 +34,14 @@ describe('Akun, sesi, dan consent (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true })],
       controllers: [VerifierController, AuthController, ConsentController],
-      providers: [DatabaseService, AccountsService, ConsentService, VerifierService, EidService],
+      providers: [
+        DatabaseService,
+        AccountsService,
+        ConsentService,
+        VerifierService,
+        VerificationGateway,
+        EidService,
+      ],
     })
       .overrideProvider(EidService)
       .useValue(eid)

@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AccountsService } from '../src/accounts/accounts.service.js';
 import { RateLimitGuard } from '../src/common/rate-limit.guard.js';
 import { DatabaseService } from '../src/db/database.service.js';
+import { VerificationGateway } from '../src/verifier/verification.gateway.js';
 import { VerifierController } from '../src/verifier/verifier.controller.js';
 import { VerifierService } from '../src/verifier/verifier.service.js';
 
@@ -28,7 +29,13 @@ describe('Verifier QR login (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true })],
       controllers: [VerifierController],
-      providers: [RateLimitGuard, DatabaseService, AccountsService, VerifierService],
+      providers: [
+        RateLimitGuard,
+        DatabaseService,
+        AccountsService,
+        VerifierService,
+        VerificationGateway,
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();

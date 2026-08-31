@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/*
+ * Tokens lifted from Figma "Master Product Design" › development › ERP UI.
+ * Named variables come straight from the file:
+ *   Primary/primary-500 #0B473B · Accent/accent-500 #CC7817 · Gray/gray-800 #414141
+ * The rest are sampled from the comps so the palette stays closed.
+ */
+@theme {
+  --color-primary: #0b473b;
+  --color-primary-700: #0e5646;
+  --color-primary-900: #063029;
+  --color-primary-50: #e6f0ec;
+
+  --color-accent: #cc7817;
+  --color-accent-50: #fdefd9;
+
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #414141;
+  --color-ink-muted: #6f6f6f;
+
+  --color-canvas: #f7f7f5;
+  --color-canvas-alt: #f1f1ee;
+  --color-surface: #ffffff;
+  --color-hairline: #e5e5e2;
+
+  --color-badge-green: #d7ebe1;
+  --color-badge-amber: #fbe6bd;
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Display headings in the comps run tight and heavy; body copy stays airy. */
+.display {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.eyebrow {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.625rem;
+  font-weight: 600;
+}

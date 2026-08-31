@@ -323,3 +323,147 @@ export const formatRupiah = (value: number) => rupiah.format(value).replace(/\s/
 const compact = new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 });
 
 export const formatCompact = (value: number) => compact.format(value);
+
+/**
+ * PRD 2.1.2 — Halaman Jobs: penawaran kapasitas produksi longgar (white-label /
+ * maklon) dan permintaan kemitraan B2B. Kedua arah dipakai satu bentuk kartu,
+ * jadi detail spesifiknya hidup di `specs` bukan di kolom terpisah.
+ */
+export type Partnership = {
+  slug: string;
+  kind: "Penawaran" | "Permintaan";
+  title: string;
+  company: string;
+  initials: string;
+  city: string;
+  industry: string;
+  image: string;
+  summary: string;
+  specs: { label: string; value: string }[];
+  tags: string[];
+  /** Gate kesiapan: tombol RFQ terkunci bila EP Score profil di bawah angka ini. */
+  epMin: number;
+};
+
+export const partnerships: Partnership[] = [
+  {
+    slug: "maklon-roasting-kopi",
+    kind: "Penawaran",
+    title: "Kapasitas Maklon Roasting Kopi 2 Ton/Bulan",
+    company: "Kopi Langit Senja",
+    initials: "KS",
+    city: "Yogyakarta",
+    industry: "Kuliner",
+    image: "/karya/k04.jpg",
+    summary:
+      "Lini roasting drum 15 kg dengan slot longgar tiga hari per minggu. Terbuka untuk private label kafe, hotel, maupun merek retail baru.",
+    specs: [
+      { label: "Kapasitas", value: "2 ton / bulan" },
+      { label: "MOQ", value: "50 kg" },
+      { label: "Lead time", value: "14 hari kerja" },
+      { label: "Standar QC", value: "SNI 01-2907 · cupping ≥ 82" },
+    ],
+    tags: ["White-Label", "Maklon", "F&B"],
+    epMin: 60,
+  },
+  {
+    slug: "jahit-maklon-busana-muslim",
+    kind: "Penawaran",
+    title: "Jahit Maklon Busana Muslim & Seragam",
+    company: "Kirana Hijab & Fashion",
+    initials: "KH",
+    city: "Bekasi",
+    industry: "Fesyen",
+    image: "/karya/k14.jpg",
+    summary:
+      "24 mesin jahit dan 4 overdeck siap menerima kontrak jahit CMT maupun full package termasuk pengadaan kain.",
+    specs: [
+      { label: "Kapasitas", value: "4.000 pcs / bulan" },
+      { label: "MOQ", value: "200 pcs" },
+      { label: "Lead time", value: "21 hari kerja" },
+      { label: "Standar QC", value: "AQL 2.5 · uji susut kain" },
+    ],
+    tags: ["CMT", "Full Package", "Fesyen"],
+    epMin: 55,
+  },
+  {
+    slug: "anyaman-rotan-white-label",
+    kind: "Penawaran",
+    title: "Produksi Anyaman Rotan White-Label",
+    company: "Kriya Nusantara Abadi",
+    initials: "KN",
+    city: "Cirebon",
+    industry: "Furniture",
+    image: "/karya/k17.jpg",
+    summary:
+      "Sentra anyaman dengan 38 perajin binaan. Menerima pesanan furnitur dan homeware rotan sesuai desain pembeli, siap ekspor.",
+    specs: [
+      { label: "Kapasitas", value: "600 unit / bulan" },
+      { label: "MOQ", value: "50 unit" },
+      { label: "Lead time", value: "30 hari kerja" },
+      { label: "Standar QC", value: "Uji beban 120 kg · finishing water-based" },
+    ],
+    tags: ["White-Label", "Ekspor", "Kriya"],
+    epMin: 70,
+  },
+  {
+    slug: "kemasan-kustom-cetak-digital",
+    kind: "Penawaran",
+    title: "Kemasan Kustom Cetak Digital Food-Grade",
+    company: "Grafika Kemas Mandiri",
+    initials: "GK",
+    city: "Bandung",
+    industry: "Kemasan & Cetak",
+    image: "/karya/k18.jpg",
+    summary:
+      "Cetak digital tanpa plat, cocok untuk UMKM yang butuh kemasan bermerek dalam kuantitas kecil sebelum naik ke produksi massal.",
+    specs: [
+      { label: "Kapasitas", value: "120.000 pcs / bulan" },
+      { label: "MOQ", value: "1.000 pcs" },
+      { label: "Lead time", value: "10 hari kerja" },
+      { label: "Standar QC", value: "Tinta food-grade · uji migrasi" },
+    ],
+    tags: ["Kemasan", "Cetak", "Low MOQ"],
+    epMin: 50,
+  },
+  {
+    slug: "permintaan-bumbu-instan",
+    kind: "Permintaan",
+    title: "Mencari Mitra Produksi Bumbu Instan 10 Ton",
+    company: "Boga Rasa Nusantara",
+    initials: "BR",
+    city: "Jakarta",
+    industry: "Kuliner",
+    image: "/karya/k05.jpg",
+    summary:
+      "Agregator ritel modern membuka kontrak tahunan untuk sembilan varian bumbu dasar. Pendampingan formulasi dan uji lab ditanggung pemesan.",
+    specs: [
+      { label: "Volume", value: "10 ton / bulan" },
+      { label: "Nilai kontrak", value: "Rp 1,2 M / tahun" },
+      { label: "Tenggat penawaran", value: "30 September 2026" },
+      { label: "Syarat wajib", value: "Sertifikat Halal · izin BPOM MD" },
+    ],
+    tags: ["Kontrak Tahunan", "Ritel Modern", "F&B"],
+    epMin: 75,
+  },
+  {
+    slug: "permintaan-seragam-batik",
+    kind: "Permintaan",
+    title: "Pengadaan Seragam Batik Korporat 5.000 Pcs",
+    company: "Koperasi Karyawan Nusantara",
+    initials: "KK",
+    city: "Semarang",
+    industry: "Fesyen",
+    image: "/karya/k01.jpg",
+    summary:
+      "Pengadaan seragam tahunan untuk enam kantor cabang. Diutamakan sentra batik yang bisa memasok tiga motif dan pengiriman bertahap.",
+    specs: [
+      { label: "Volume", value: "5.000 pcs" },
+      { label: "Anggaran", value: "Rp 275.000 / pcs" },
+      { label: "Tenggat penawaran", value: "15 Oktober 2026" },
+      { label: "Syarat wajib", value: "Batik tulis/cap · 3 contoh motif" },
+    ],
+    tags: ["Pengadaan", "Batik", "Korporat"],
+    epMin: 65,
+  },
+];

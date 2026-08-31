@@ -1,22 +1,27 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { apiUrl } from "./api";
 
 /** Mirrors the profile shape the e.id gateway returns for scope=email:profile. */
 export type EidProfile = {
   email?: string;
+  /** True bila sesi ini lahir dari verifikasi simulasi, bukan Dompet e.id. */
+  demo?: boolean;
   profile?: {
     address?: string;
     avatar?: string;
     countryphonecode?: string;
     fullname?: string;
     phonenumber?: string;
+    /** Sudah tersamar saat meninggalkan backend — NIK utuh tidak pernah dikirim. */
+    nik?: string;
+    kycVendor?: string;
     /** 0 unverified · 1 basic (email+phone) · 2 moderate (+ formal ID). */
     tier?: number;
   };
 };
 
-/** Base URL of the NestJS backend, which owns every e.id credential. */
-export const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+export { apiUrl };
 
 export const loginHref = `${apiUrl}/api/v1/auth/login`;
 export const logoutHref = `${apiUrl}/api/v1/auth/logout`;

@@ -4,7 +4,9 @@ import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AccountsService } from '../src/accounts/accounts.service.js';
 import { AuthController } from '../src/auth/auth.controller.js';
+import { DatabaseService } from '../src/db/database.service.js';
 import { EidService } from '../src/eid/eid.service.js';
 import { IssuanceController } from '../src/issuance/issuance.controller.js';
 
@@ -28,12 +30,13 @@ describe('e.id SSO callback (e2e)', () => {
 
   beforeAll(async () => {
     process.env.APP_URL = APP_URL;
+    process.env.DATABASE_FILE = ':memory:';
     process.env.EID_SCHEMA_PRIVATE_CODE = PRIVATE_CODE;
 
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true })],
       controllers: [AuthController, IssuanceController],
-      providers: [EidService],
+      providers: [DatabaseService, AccountsService, EidService],
     })
       .overrideProvider(EidService)
       .useValue(eid)

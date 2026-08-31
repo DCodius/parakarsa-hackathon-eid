@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { partnerships, type Partnership } from "@/lib/data";
-import { epScore } from "./dna-radar";
+import { epScore } from "@/lib/dna";
 import { Badge, Chip, EpGate, VerifiedTick } from "./ui";
 
 const filters = ["Semua", "Penawaran", "Permintaan"] as const;
@@ -19,7 +19,7 @@ export function PartnershipFeed() {
   const visible = partnerships.filter((item) => kind === "Semua" || item.kind === kind);
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-12 md:px-8">
+    <section className="mx-auto max-w-7xl px-6 py-12 md:px-8">
       <div className="flex flex-wrap items-center gap-2.5">
         {filters.map((name) => (
           <button

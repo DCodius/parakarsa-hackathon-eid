@@ -6,28 +6,31 @@ import { testimonials, villageStory } from "@/lib/data";
 export default function ShowcasesPage() {
   return (
     <>
-      <section className="relative isolate overflow-hidden">
-        <Image
-          src="/karya/k18.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="-z-10 object-cover"
-        />
-        <div className="absolute inset-0 -z-10 bg-canvas/88" />
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center md:py-28">
-          <h1 className="display text-4xl text-primary md:text-5xl">
-            Pusat Karya Terbaik UMKM Indonesia
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-ink-soft md:text-base">
-            Temukan keunikan produk lokal dan dukung inisiatif kolektif wirausaha mandiri.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <ButtonLink href="#karya">Jelajahi Produk</ButtonLink>
-            <ButtonLink href="/login" tone="accent">
-              Gabung sebagai Mitra
-            </ButtonLink>
+      <section className="border-b border-hairline bg-canvas-alt">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:grid-cols-2 md:px-8 md:py-20">
+          <div>
+            <h1 className="display text-4xl text-primary md:text-5xl lg:text-6xl">
+              Pusat Karya Terbaik UMKM Indonesia
+            </h1>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-ink-soft md:text-base">
+              Temukan keunikan produk lokal dan dukung inisiatif kolektif wirausaha mandiri.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink href="#karya">Jelajahi Produk</ButtonLink>
+              <ButtonLink href="/login" tone="accent">
+                Gabung sebagai Mitra
+              </ButtonLink>
+            </div>
+          </div>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl md:aspect-[5/4]">
+            <Image
+              src="/karya/k18.jpg"
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 620px"
+              className="object-cover"
+            />
           </div>
         </div>
       </section>
@@ -37,8 +40,8 @@ export default function ShowcasesPage() {
       </div>
 
       <section className="bg-canvas-alt py-16">
-        <div className="mx-auto max-w-6xl px-6 md:px-8">
-          <SectionTitle className="text-center">Testimoni</SectionTitle>
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
+          <SectionTitle>Testimoni</SectionTitle>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {testimonials.map((item) => (
               <figure
@@ -64,7 +67,7 @@ export default function ShowcasesPage() {
       </section>
 
       <section className="py-16">
-        <div className="mx-auto max-w-6xl px-6 md:px-8">
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
           <SectionTitle>Kisah dari Desa</SectionTitle>
           <div className="mt-8 grid items-stretch gap-6 md:grid-cols-2">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl md:aspect-auto">

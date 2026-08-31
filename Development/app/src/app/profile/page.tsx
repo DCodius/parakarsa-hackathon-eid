@@ -1,9 +1,10 @@
 import Image from "next/image";
+import { OnchainProof } from "@/components/onchain-proof";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { ButtonLink, VerifiedTick } from "@/components/ui";
 import { artisan } from "@/lib/data";
 
-import { getSession, loginHref, logoutHref, type EidProfile } from "@/lib/session";
+import { getSession, loginHref, type EidProfile } from "@/lib/session";
 
 const tiers = ["Belum terverifikasi", "Tier 1 · Email & telepon", "Tier 2 · Identitas formal"];
 
@@ -24,7 +25,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         <Image src={artisan.cover} alt="" fill priority sizes="100vw" className="object-cover" />
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
+      <div className="mx-auto max-w-7xl px-6 pb-16 md:px-8">
         {error && (
           <p className="mt-6 rounded-xl border border-accent bg-accent-50 px-5 py-4 text-sm text-accent">
             Login e.id gagal: {error}
@@ -140,6 +141,10 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
             </div>
 
             <div className="mt-8">
+              <OnchainProof />
+            </div>
+
+            <div className="mt-8">
               <ProfileTabs />
             </div>
           </div>
@@ -198,20 +203,19 @@ function IdentityCard({ session }: { session: EidProfile | null }) {
             <Row term="Telepon" value={maskPhone(profile?.countryphonecode, profile?.phonenumber)} />
             <Row term="Sumber" value="e.id OAuth SSO" />
           </dl>
-          <form action={logoutHref} method="post" className="mt-4">
-            <button
-              type="submit"
-              className="w-full rounded-lg border border-hairline py-2.5 text-sm text-ink-soft transition hover:border-ink-muted"
-            >
-              Keluar
-            </button>
-          </form>
+          <ButtonLink href="/profile/dna" tone="outline" className="mt-4 w-full">
+            Unduh DNA Portfolio (PDF)
+          </ButtonLink>
+
         </>
       ) : (
         <div className="mt-5 space-y-2.5">
           <ButtonLink href={loginHref} prefetch={false} className="w-full">
             <VerifiedTick className="size-4" />
             Masuk dengan e.id
+          </ButtonLink>
+          <ButtonLink href="/profile/dna" tone="outline" className="w-full">
+            Unduh DNA Portfolio (PDF)
           </ButtonLink>
           <button
             type="button"

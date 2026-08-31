@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { helices, programs, type Helix, type Program } from "@/lib/data";
-import { epScore } from "./dna-radar";
+import { epScore } from "@/lib/dna";
 import { Button, Chip, EpGate, VerifiedTick } from "./ui";
 
 export function ProgramHub() {
@@ -12,7 +12,7 @@ export function ProgramHub() {
   const open = visible.filter((p) => epScore >= p.epMin).length;
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-12 md:px-8">
+    <section className="mx-auto max-w-7xl px-6 py-12 md:px-8">
       <div className="flex flex-wrap items-center gap-2.5">
         <Pill label="Semua" selected={helix === null} onClick={() => setHelix(null)} />
         {helices.map((name) => (

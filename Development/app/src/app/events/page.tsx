@@ -10,7 +10,7 @@ export default function EventsPage() {
   return (
     <>
       <div className="border-b border-hairline bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-6 py-2.5 md:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-6 py-2.5 md:px-8">
           {subNav.map((item) => (
             <span
               key={item}
@@ -27,7 +27,7 @@ export default function EventsPage() {
       </div>
 
       <section className="bg-gradient-to-b from-primary-50 to-canvas">
-        <div className="mx-auto max-w-6xl px-6 py-12 md:px-8">
+        <div className="mx-auto max-w-7xl px-6 py-12 md:px-8">
           <h1 className="display text-3xl md:text-4xl">Available Events</h1>
           <div className="mt-6">
             <EventCityFilter />
@@ -35,7 +35,7 @@ export default function EventsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl space-y-6 px-6 py-12 md:px-8">
+      <section className="mx-auto max-w-7xl space-y-6 px-6 py-12 md:px-8">
         {events.map((event) => (
           <article
             key={event.slug}

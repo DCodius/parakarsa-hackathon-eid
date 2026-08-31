@@ -149,3 +149,6 @@ vite.config.ts.timestamp-*
 !.claude/
 .claude/*
 !.claude/launch.json
+
+# SQLite lokal (akun, consent, hash log verifikasi)
+Development/api/data/

@@ -1,19 +1,34 @@
-import Image from "next/image";
 import Link from "next/link";
-import { artisan } from "@/lib/data";
-import { getSession } from "@/lib/session";
+import { ButtonLink, VerifiedTick } from "@/components/ui";
+import { getSession, logoutHref } from "@/lib/session";
 import { NavLinks } from "./nav-links";
+import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
   const session = await getSession();
   const avatar = session?.profile?.avatar;
+  const fullname = session?.profile?.fullname;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-hairline bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3.5 md:px-8">
+    <header className="sticky top-0 z-50 border-b border-hairline bg-surface print:hidden">
+      <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3.5 md:px-8">
         <Link href="/" className="display shrink-0 text-xl text-primary">
           ParaKarsa
         </Link>
+
+        {/* PRD 4.3: juri harus bisa membedakan data live dari data simulasi. */}
+        <span
+          title={
+            session?.demo
+              ? "Sesi simulasi QR — kredensial belum berasal dari Dompet e.id"
+              : "Terhubung ke lingkungan sandbox e.id (api-dev.e.id)"
+          }
+          className={`hidden shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide sm:inline-flex ${
+            session?.demo ? "bg-badge-amber text-accent" : "bg-canvas-alt text-ink-muted"
+          }`}
+        >
+          {session?.demo ? "Simulation Mode" : "Sandbox"}
+        </span>
 
         <div className="mx-auto">
           <NavLinks />
@@ -36,39 +51,40 @@ export async function SiteHeader() {
           />
         </label>
 
-        <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0">
-          <IconButton label="Notifikasi">
-            <path
-              d="M6 8a4 4 0 1 1 8 0c0 3 1 4 1 4H5s1-1 1-4Zm2 7a2 2 0 0 0 4 0"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </IconButton>
-          <IconButton label="Pesan">
-            <path
-              d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v7A1.5 1.5 0 0 1 15.5 14H8l-4 3v-3H4.5A1.5 1.5 0 0 1 3 12.5Z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-          </IconButton>
+        {session ? (
+          <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0">
+            <IconButton label="Notifikasi">
+              <path
+                d="M6 8a4 4 0 1 1 8 0c0 3 1 4 1 4H5s1-1 1-4Zm2 7a2 2 0 0 0 4 0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </IconButton>
+            <IconButton label="Pesan">
+              <path
+                d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v7A1.5 1.5 0 0 1 15.5 14H8l-4 3v-3H4.5A1.5 1.5 0 0 1 3 12.5Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </IconButton>
 
-          <Link
-            href="/profile"
-            className="relative size-9 overflow-hidden rounded-full ring-1 ring-hairline"
-          >
-            {avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="Profil Anda" className="size-full object-cover" />
-            ) : (
-              <Image src={artisan.avatar} alt="Profil Anda" fill sizes="36px" className="object-cover" />
-            )}
-          </Link>
-        </div>
+            <UserMenu
+              avatar={avatar}
+              fullname={fullname}
+              logoutAction={logoutHref}
+            />
+          </div>
+        ) : (
+          <ButtonLink href="/login" className="ml-auto shrink-0 px-4 py-2 lg:ml-0">
+            <VerifiedTick className="size-4" />
+            Masuk dengan e.id
+          </ButtonLink>
+        )}
       </div>
     </header>
   );

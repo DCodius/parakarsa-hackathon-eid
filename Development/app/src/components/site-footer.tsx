@@ -17,8 +17,8 @@ const columns = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-hairline bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-4 md:px-8">
+    <footer className="border-t border-hairline bg-surface print:hidden">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4 md:px-8">
         <div>
           <Link href="/" className="display text-xl text-primary">
             ParaKarsa
@@ -42,7 +42,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-hairline">
-        <div className="mx-auto flex max-w-6xl items-center px-6 py-5 text-xs text-ink-muted md:px-8">
+        <div className="mx-auto flex max-w-7xl items-center px-6 py-5 text-xs text-ink-muted md:px-8">
           <p>© 2026 ParaKarsa. Memberdayakan pengrajin Indonesia.</p>
           <p className="ml-auto">Identitas usaha diverifikasi melalui e.id</p>
         </div>

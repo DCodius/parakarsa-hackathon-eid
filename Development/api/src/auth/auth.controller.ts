@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { AccountsService, PK_SESSION_COOKIE, type Account } from '../accounts/accounts.service.js';
 import { EidService } from '../eid/eid.service.js';
 
 export const SESSION_COOKIE = 'eid_token';
@@ -10,6 +11,7 @@ export class AuthController {
   constructor(
     private readonly eid: EidService,
     private readonly config: ConfigService,
+    private readonly accounts: AccountsService,
   ) {}
 
   private get appUrl(): string {
@@ -55,9 +57,16 @@ export class AuthController {
     }
   }
 
-  /** The frontend reads the session through here, forwarding the browser's cookie. */
+  /**
+   * Satu pintu bagi frontend untuk membaca sesi, apa pun cara masuknya:
+   * sesi ParaKarsa hasil verifikasi QR, atau token OAuth SSO.
+   */
   @Get('auth/me')
   async me(@Req() req: Request) {
+    const pkToken = req.cookies?.[PK_SESSION_COOKIE] as string | undefined;
+    const account = pkToken ? this.accounts.bySessionToken(pkToken) : null;
+    if (account) return { authenticated: true, profile: toProfile(account) };
+
     const token = req.cookies?.[SESSION_COOKIE] as string | undefined;
     if (!token) return { authenticated: false, profile: null };
 
@@ -66,7 +75,11 @@ export class AuthController {
   }
 
   @Post('auth/logout')
-  logout(@Res() res: Response) {
+  logout(@Req() req: Request, @Res() res: Response) {
+    const pkToken = req.cookies?.[PK_SESSION_COOKIE] as string | undefined;
+    if (pkToken) this.accounts.revokeSession(pkToken);
+
+    res.clearCookie(PK_SESSION_COOKIE, { path: '/' });
     res.clearCookie(SESSION_COOKIE, { path: '/' });
     res.redirect(303, this.appUrl);
   }
@@ -76,4 +89,19 @@ export class AuthController {
     url.searchParams.set('error', message);
     return url.toString();
   }
+}
+
+/** Akun lokal dipetakan ke bentuk profil e.id supaya frontend tidak perlu tahu asal sesinya. */
+function toProfile(account: Account) {
+  return {
+    email: account.email ?? undefined,
+    demo: account.simulated === 1,
+    profile: {
+      fullname: account.fullname ?? undefined,
+      phonenumber: account.phone ?? undefined,
+      nik: account.nik_masked ?? undefined,
+      kycVendor: account.kyc_vendor ?? undefined,
+      tier: account.tier,
+    },
+  };
 }

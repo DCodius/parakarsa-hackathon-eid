@@ -28,29 +28,48 @@ export const categories: Category[] = [
   "Kesehatan",
 ];
 
+/** PRD 2.1.1 — filter cepat Explore: wilayah regional dan kesiapan B2B. */
+export const regions = [
+  "Sumatera",
+  "Jawa",
+  "Bali & Nusa Tenggara",
+  "Kalimantan",
+  "Sulawesi",
+] as const;
+export type Region = (typeof regions)[number];
+
+/**
+ * Readiness Level dipakai calon mitra B2B untuk menyaring: siapa yang baru
+ * bisa sampel, siapa yang sudah sanggup kontrak maklon berjalan.
+ */
+export const readinessLevels = ["Eksplorasi", "Siap Sampel", "Siap Kontrak"] as const;
+export type Readiness = (typeof readinessLevels)[number];
+
 export type Karya = {
   slug: string;
   title: string;
   maker: string;
   category: Category;
+  region: Region;
+  readiness: Readiness;
   image: string;
   likes: number;
   views: number;
 };
 
 export const karya: Karya[] = [
-  { slug: "kopi-arabica-gayo", title: "Kopi Arabica Gayo Premium", maker: "Koperasi Tani Takengon", category: "Agrikultur", image: "/karya/k16.jpg", likes: 4200, views: 12000 },
-  { slug: "anyaman-rotan-modern", title: "Anyaman Rotan Modern Set", maker: "Kriya Nusantara Abadi", category: "Furniture", image: "/karya/k17.jpg", likes: 3800, views: 21000 },
-  { slug: "kain-batik-tulis", title: "Kain Batik Tulis Kontemporer", maker: "Batik Warga Solo", category: "Batik Tradisional", image: "/karya/k01.jpg", likes: 5100, views: 18000 },
-  { slug: "skincare-organik-bali", title: "Skincare Organik Bali", maker: "Natura Bali", category: "Kesehatan", image: "/karya/k07.jpg", likes: 2100, views: 7200 },
-  { slug: "kopi-luwak-java", title: "Kopi Luwak Java", maker: "Java Heritage Coffee", category: "Agrikultur", image: "/karya/k04.jpg", likes: 1500, views: 5200 },
-  { slug: "tenun-ikat-ntt", title: "Tenun Ikat NTT", maker: "Tenun Sumba Collective", category: "Karya Seni", image: "/karya/k10.jpg", likes: 2700, views: 8400 },
-  { slug: "set-keramik-glasir", title: "Set Keramik Glasir Estetik", maker: "Studio Tanah Liat Kasongan", category: "Karya Seni", image: "/karya/k06.jpg", likes: 3200, views: 10000 },
-  { slug: "ukiran-kayu-jati", title: "Ukiran Kayu Jati Jepara", maker: "Karya Seni Utama", category: "Furniture", image: "/karya/k08.jpg", likes: 4600, views: 19000 },
-  { slug: "cokelat-artisan", title: "Cokelat Artisan Nusantara", maker: "Kakao Bali Maju", category: "Kuliner Kemasan", image: "/karya/k05.jpg", likes: 1800, views: 6800 },
-  { slug: "perhiasan-perak-celuk", title: "Perhiasan Perak Celuk", maker: "Silver Smith Bali", category: "Karya Seni", image: "/karya/k12.jpg", likes: 3800, views: 7900 },
-  { slug: "pakaian-katun-ramah", title: "Pakaian Katun Ramah Lingkungan", maker: "Bumi & Kain", category: "Fashion", image: "/karya/k14.jpg", likes: 4100, views: 7000 },
-  { slug: "minyak-atsiri-nusantara", title: "Minyak Atsiri Murni Nusantara", maker: "Aroma Jaya Nusantara", category: "Kesehatan", image: "/karya/k20.jpg", likes: 2500, views: 5800 },
+  { slug: "kopi-arabica-gayo", title: "Kopi Arabica Gayo Premium", maker: "Koperasi Tani Takengon", category: "Agrikultur", region: "Sumatera", readiness: "Siap Kontrak", image: "/karya/k16.jpg", likes: 4200, views: 12000 },
+  { slug: "anyaman-rotan-modern", title: "Anyaman Rotan Modern Set", maker: "Kriya Nusantara Abadi", category: "Furniture", region: "Kalimantan", readiness: "Siap Kontrak", image: "/karya/k17.jpg", likes: 3800, views: 21000 },
+  { slug: "kain-batik-tulis", title: "Kain Batik Tulis Kontemporer", maker: "Batik Warga Solo", category: "Batik Tradisional", region: "Jawa", readiness: "Siap Kontrak", image: "/karya/k01.jpg", likes: 5100, views: 18000 },
+  { slug: "skincare-organik-bali", title: "Skincare Organik Bali", maker: "Natura Bali", category: "Kesehatan", region: "Bali & Nusa Tenggara", readiness: "Siap Sampel", image: "/karya/k07.jpg", likes: 2100, views: 7200 },
+  { slug: "kopi-luwak-java", title: "Kopi Luwak Java", maker: "Java Heritage Coffee", category: "Agrikultur", region: "Jawa", readiness: "Siap Sampel", image: "/karya/k04.jpg", likes: 1500, views: 5200 },
+  { slug: "tenun-ikat-ntt", title: "Tenun Ikat NTT", maker: "Tenun Sumba Collective", category: "Karya Seni", region: "Bali & Nusa Tenggara", readiness: "Eksplorasi", image: "/karya/k10.jpg", likes: 2700, views: 8400 },
+  { slug: "set-keramik-glasir", title: "Set Keramik Glasir Estetik", maker: "Studio Tanah Liat Kasongan", category: "Karya Seni", region: "Jawa", readiness: "Siap Sampel", image: "/karya/k06.jpg", likes: 3200, views: 10000 },
+  { slug: "ukiran-kayu-jati", title: "Ukiran Kayu Jati Jepara", maker: "Karya Seni Utama", category: "Furniture", region: "Jawa", readiness: "Siap Kontrak", image: "/karya/k08.jpg", likes: 4600, views: 19000 },
+  { slug: "cokelat-artisan", title: "Cokelat Artisan Nusantara", maker: "Kakao Bali Maju", category: "Kuliner Kemasan", region: "Bali & Nusa Tenggara", readiness: "Siap Sampel", image: "/karya/k05.jpg", likes: 1800, views: 6800 },
+  { slug: "perhiasan-perak-celuk", title: "Perhiasan Perak Celuk", maker: "Silver Smith Bali", category: "Karya Seni", region: "Bali & Nusa Tenggara", readiness: "Siap Kontrak", image: "/karya/k12.jpg", likes: 3800, views: 7900 },
+  { slug: "pakaian-katun-ramah", title: "Pakaian Katun Ramah Lingkungan", maker: "Bumi & Kain", category: "Fashion", region: "Jawa", readiness: "Eksplorasi", image: "/karya/k14.jpg", likes: 4100, views: 7000 },
+  { slug: "minyak-atsiri-nusantara", title: "Minyak Atsiri Murni Nusantara", maker: "Aroma Jaya Nusantara", category: "Kesehatan", region: "Sulawesi", readiness: "Siap Sampel", image: "/karya/k20.jpg", likes: 2500, views: 5800 },
 ];
 
 export type Testimonial = { quote: string; name: string; role: string; avatar: string };

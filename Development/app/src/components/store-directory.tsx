@@ -23,7 +23,7 @@ export function StoreDirectory() {
   );
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
+    <section className="mx-auto max-w-7xl px-6 pb-16 md:px-8">
       <div className="flex flex-wrap items-center gap-4 py-8">
         <h2 className="display text-xl">Jelajah UMKM</h2>
 

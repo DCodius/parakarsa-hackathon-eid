@@ -48,3 +48,15 @@ body {
   font-size: 0.625rem;
   font-weight: 600;
 }
+
+/* DNA Portfolio dicetak lewat dialog browser: satu halaman A4, tanpa kromo situs. */
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}

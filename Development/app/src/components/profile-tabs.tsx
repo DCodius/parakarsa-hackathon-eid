@@ -6,6 +6,7 @@ import {
   defaultConsent,
   fetchConsent,
   putConsent,
+  type ConsentChain,
   type ConsentEntry,
   type ConsentKey,
   type ConsentState,
@@ -27,6 +28,7 @@ export function ProfileTabs() {
   const [certificates, setCertificates] = useState<string[]>([]);
   const [granted, setGranted] = useState<ConsentState>(defaultConsent);
   const [log, setLog] = useState<ConsentEntry[]>([]);
+  const [chain, setChain] = useState<ConsentChain | null>(null);
   const [signedIn, setSignedIn] = useState(false);
 
   // TC-EID-02: consent dibaca dari backend, jadi pencabutan berlaku di semua
@@ -37,6 +39,7 @@ export function ProfileTabs() {
       if (!active || !payload) return;
       setGranted(payload.granted);
       setLog(payload.log);
+      setChain(payload.chain);
       setSignedIn(true);
     });
     return () => {
@@ -48,6 +51,7 @@ export function ProfileTabs() {
     const payload = await putConsent(key, !granted[key]);
     setGranted(payload.granted);
     setLog(payload.log);
+    setChain(payload.chain);
   }
 
   const axes = axesWithEvidence(certificates.length);
@@ -141,6 +145,7 @@ export function ProfileTabs() {
           <ConsentPanel
             granted={granted}
             log={log}
+            chain={chain}
             signedIn={signedIn}
             onToggle={(key) => void toggleConsent(key)}
           />

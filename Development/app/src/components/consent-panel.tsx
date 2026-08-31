@@ -3,6 +3,7 @@
 import {
   consentScopes,
   scopeLabel,
+  type ConsentChain,
   type ConsentEntry,
   type ConsentKey,
   type ConsentState,
@@ -15,11 +16,13 @@ import {
 export function ConsentPanel({
   granted,
   log,
+  chain,
   signedIn,
   onToggle,
 }: {
   granted: ConsentState;
   log: ConsentEntry[];
+  chain: ConsentChain | null;
   signedIn: boolean;
   onToggle: (key: ConsentKey) => void;
 }) {
@@ -72,7 +75,23 @@ export function ConsentPanel({
       </ul>
 
       <div className="mt-5">
-        <p className="eyebrow text-ink-muted">Audit log consent</p>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <p className="eyebrow text-ink-muted">Audit log consent</p>
+          {chain && (
+            <span
+              title={
+                chain.intact
+                  ? "Tiap entri mengunci entri sebelumnya lewat hash; rantainya cocok saat dihitung ulang."
+                  : `Rantai putus di entri ke-${chain.brokenAt}. Riwayat pernah diubah di luar aplikasi.`
+              }
+              className={`ml-auto rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                chain.intact ? "bg-badge-green text-primary" : "bg-badge-amber text-accent"
+              }`}
+            >
+              {chain.intact ? `Rantai utuh · ${chain.entries} entri` : "Rantai putus"}
+            </span>
+          )}
+        </div>
         {log.length === 0 ? (
           <p className="mt-2 font-mono text-xs text-ink-muted">
             {signedIn
@@ -82,16 +101,24 @@ export function ConsentPanel({
         ) : (
           <ul className="mt-2 space-y-1 font-mono text-xs text-ink-muted">
             {log.map((entry) => (
-              <li key={entry.ref} className="flex flex-wrap gap-x-2">
+              <li key={entry.entryHash} className="flex flex-wrap gap-x-2">
                 <span>{new Date(entry.at).toLocaleString("id-ID")}</span>
                 <span className={entry.action === "DICABUT" ? "text-accent" : "text-primary"}>
                   {entry.action}
                 </span>
                 <span className="text-ink-muted">— {scopeLabel(entry.scope)}</span>
-                <span className="ml-auto">{entry.ref}</span>
+                <span className="ml-auto" title={`Hash entri: ${entry.entryHash}`}>
+                  {entry.entryHash.slice(0, 10)}…
+                </span>
               </li>
             ))}
           </ul>
+        )}
+        {chain?.head && (
+          <p className="mt-3 border-t border-hairline pt-3 text-[11px] leading-relaxed text-ink-muted">
+            Head rantai <code className="font-mono">{chain.head.slice(0, 16)}…</code> — nilai inilah
+            yang dijangkarkan ke IDChain, tanpa perlu membocorkan isi riwayatnya.
+          </p>
         )}
       </div>
     </div>

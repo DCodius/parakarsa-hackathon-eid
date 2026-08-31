@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { DatabaseService } from '../db/database.service.js';
 
 /** Cakupan data yang bisa dibuka-tutup pemilik akun — FR-04 (DART). */
@@ -21,6 +21,18 @@ export interface ConsentEntry {
   action: 'DIBERIKAN' | 'DICABUT';
   ref: string;
   at: string;
+  /** Sidik jari entri ini, sekaligus kunci bagi entri berikutnya. */
+  entryHash: string;
+}
+
+/** Hasil pemeriksaan keutuhan rantai audit — TC-EID-02. */
+export interface ChainStatus {
+  intact: boolean;
+  entries: number;
+  /** Hash entri terakhir; inilah yang kelak dijangkarkan ke IDChain. */
+  head: string | null;
+  /** Terisi nomor entri pertama yang tidak cocok, bila rantai putus. */
+  brokenAt?: number;
 }
 
 const LOG_LIMIT = 20;
@@ -53,6 +65,7 @@ export class ConsentService {
     }
 
     const at = new Date().toISOString();
+    const previous = this.head(accountId);
     this.database.db
       .prepare(
         `INSERT INTO consents (account_id, scope, granted, updated_at) VALUES (?, ?, ?, ?)
@@ -61,25 +74,79 @@ export class ConsentService {
       )
       .run(accountId, scope, granted ? 1 : 0, at);
 
-    const entry: ConsentEntry = {
-      scope,
-      action: granted ? 'DIBERIKAN' : 'DICABUT',
-      // Diisi hash transaksi begitu log consent dicatat ke IDChain.
-      ref: `local-${randomUUID().slice(0, 8)}`,
-      at,
-    };
-    this.database.db
-      .prepare('INSERT INTO consent_log (account_id, scope, action, ref, at) VALUES (?, ?, ?, ?, ?)')
-      .run(accountId, entry.scope, entry.action, entry.ref, entry.at);
+    const action = granted ? 'DIBERIKAN' : 'DICABUT';
+    // Diisi hash transaksi begitu head rantai dijangkarkan ke IDChain.
+    const ref = `local-${randomUUID().slice(0, 8)}`;
+    const entryHash = hashEntry(previous, { accountId, scope, action, ref, at });
 
-    return entry;
+    this.database.db
+      .prepare(
+        `INSERT INTO consent_log (account_id, scope, action, ref, at, prev_hash, entry_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(accountId, scope, action, ref, at, previous, entryHash);
+
+    return { scope, action, ref, at, entryHash };
   }
 
   log(accountId: string): ConsentEntry[] {
     return this.database.db
       .prepare(
-        'SELECT scope, action, ref, at FROM consent_log WHERE account_id = ? ORDER BY id DESC LIMIT ?',
+        `SELECT scope, action, ref, at, entry_hash AS entryHash FROM consent_log
+         WHERE account_id = ? ORDER BY id DESC LIMIT ?`,
       )
       .all(accountId, LOG_LIMIT) as unknown as ConsentEntry[];
   }
+
+  /** Hash entri terakhir, atau string kosong bila belum ada riwayat. */
+  private head(accountId: string): string {
+    const row = this.database.db
+      .prepare('SELECT entry_hash FROM consent_log WHERE account_id = ? ORDER BY id DESC LIMIT 1')
+      .get(accountId) as { entry_hash: string } | undefined;
+    return row?.entry_hash ?? '';
+  }
+
+  /**
+   * Menghitung ulang seluruh rantai dari awal. Satu baris yang diubah atau
+   * dihapus langsung membuat hash tidak cocok, dan nomor entrinya dilaporkan.
+   */
+  verify(accountId: string): ChainStatus {
+    const rows = this.database.db
+      .prepare(
+        `SELECT scope, action, ref, at, prev_hash, entry_hash FROM consent_log
+         WHERE account_id = ? ORDER BY id ASC`,
+      )
+      .all(accountId) as unknown as {
+      scope: string;
+      action: ConsentEntry['action'];
+      ref: string;
+      at: string;
+      prev_hash: string;
+      entry_hash: string;
+    }[];
+
+    let previous = '';
+    for (const [index, row] of rows.entries()) {
+      const expected = hashEntry(previous, { accountId, ...row });
+      if (row.prev_hash !== previous || row.entry_hash !== expected) {
+        return { intact: false, entries: rows.length, head: previous || null, brokenAt: index + 1 };
+      }
+      previous = row.entry_hash;
+    }
+
+    return { intact: true, entries: rows.length, head: previous || null };
+  }
+}
+
+/**
+ * ponytail: rantai hash lokal. Penjangkaran ke IDChain tinggal menerbitkan
+ * nilai `head` ke ledger — isi entrinya tidak perlu ikut keluar.
+ */
+function hashEntry(
+  previous: string,
+  entry: { accountId: string; scope: string; action: string; ref: string; at: string },
+): string {
+  return createHash('sha256')
+    .update(`${previous}|${entry.accountId}|${entry.scope}|${entry.action}|${entry.ref}|${entry.at}`)
+    .digest('hex');
 }

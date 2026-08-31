@@ -22,6 +22,7 @@ const eid = { getProfile: () => Promise.resolve(null) };
  */
 describe('Akun, sesi, dan consent (e2e)', () => {
   let app: INestApplication<App>;
+  let database: DatabaseService;
 
   beforeAll(async () => {
     process.env.DATABASE_FILE = ':memory:';
@@ -42,6 +43,7 @@ describe('Akun, sesi, dan consent (e2e)', () => {
     app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     await app.init();
+    database = app.get(DatabaseService);
   });
 
   afterAll(async () => {
@@ -131,6 +133,54 @@ describe('Akun, sesi, dan consent (e2e)', () => {
       .set('Cookie', cookie)
       .send({ granted: true })
       .expect(400);
+  });
+
+  it('merantai tiap entri audit sehingga keutuhannya bisa dibuktikan', async () => {
+    const cookie = await signIn();
+    // Akun dikenali lewat NIK, jadi riwayat dari test lain ikut terbawa.
+    const before = await request(app.getHttpServer())
+      .get('/api/v1/consent/verify')
+      .set('Cookie', cookie)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .put('/api/v1/consent/third-party')
+      .set('Cookie', cookie)
+      .send({ granted: true })
+      .expect(200);
+    const revoked = await request(app.getHttpServer())
+      .put('/api/v1/consent/phone')
+      .set('Cookie', cookie)
+      .send({ granted: false })
+      .expect(200);
+
+    expect(revoked.body.chain.intact).toBe(true);
+    expect(revoked.body.chain.entries).toBe(before.body.entries + 2);
+    // Head inilah yang kelak dijangkarkan ke IDChain.
+    expect(revoked.body.chain.head).toHaveLength(64);
+    expect(revoked.body.entry.entryHash).toBe(revoked.body.chain.head);
+  });
+
+  it('mendeteksi baris audit yang diubah diam-diam di database', async () => {
+    const cookie = await signIn();
+    await request(app.getHttpServer())
+      .put('/api/v1/consent/third-party')
+      .set('Cookie', cookie)
+      .send({ granted: true })
+      .expect(200);
+
+    const me = await request(app.getHttpServer()).get('/api/v1/auth/me').set('Cookie', cookie);
+    expect(me.body.authenticated).toBe(true);
+
+    // Menirukan penyusup yang membalik catatan "DIBERIKAN" menjadi "DICABUT".
+    database.db.prepare("UPDATE consent_log SET action = 'DICABUT' WHERE id = (SELECT MAX(id) FROM consent_log)").run();
+
+    const chain = await request(app.getHttpServer())
+      .get('/api/v1/consent/verify')
+      .set('Cookie', cookie)
+      .expect(200);
+    expect(chain.body.intact).toBe(false);
+    expect(chain.body.brokenAt).toBeGreaterThan(0);
   });
 
   it('menolak akses consent tanpa sesi', async () => {

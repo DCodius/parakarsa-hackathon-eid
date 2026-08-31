@@ -14,7 +14,17 @@ export class ConsentController {
   @Get()
   read(@Req() request: Request) {
     const account = this.account(request);
-    return { granted: this.consent.state(account.id), log: this.consent.log(account.id) };
+    return {
+      granted: this.consent.state(account.id),
+      log: this.consent.log(account.id),
+      chain: this.consent.verify(account.id),
+    };
+  }
+
+  /** TC-EID-02 — bukti bahwa riwayat consent tidak diubah diam-diam. */
+  @Get('verify')
+  verify(@Req() request: Request) {
+    return this.consent.verify(this.account(request).id);
   }
 
   @Put(':scope')
@@ -25,7 +35,12 @@ export class ConsentController {
   ) {
     const account = this.account(request);
     const entry = this.consent.set(account.id, scope, body.granted === true);
-    return { entry, granted: this.consent.state(account.id), log: this.consent.log(account.id) };
+    return {
+      entry,
+      granted: this.consent.state(account.id),
+      log: this.consent.log(account.id),
+      chain: this.consent.verify(account.id),
+    };
   }
 
   /** Consent hanya bisa dibaca dan diubah oleh pemilik akunnya sendiri. */

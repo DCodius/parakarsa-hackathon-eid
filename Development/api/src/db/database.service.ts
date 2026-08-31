@@ -33,7 +33,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.handle.exec('PRAGMA journal_mode = WAL');
     this.handle.exec('PRAGMA foreign_keys = ON');
     this.handle.exec(SCHEMA);
+    this.migrate();
     this.logger.log(`Database siap di ${file}`);
+  }
+
+  /**
+   * Menambal database yang dibuat versi sebelumnya. SQLite tidak punya
+   * ADD COLUMN IF NOT EXISTS, jadi kolomnya diperiksa dulu.
+   */
+  private migrate(): void {
+    const columns = this.db.prepare('PRAGMA table_info(consent_log)').all() as { name: string }[];
+    for (const column of ['prev_hash', 'entry_hash']) {
+      if (!columns.some((existing) => existing.name === column)) {
+        this.db.exec(`ALTER TABLE consent_log ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
+        this.logger.log(`Kolom consent_log.${column} ditambahkan`);
+      }
+    }
   }
 
   onModuleDestroy(): void {
@@ -78,13 +93,17 @@ CREATE TABLE IF NOT EXISTS consents (
   PRIMARY KEY (account_id, scope)
 );
 
+-- Tiap entri mengunci entri sebelumnya lewat prev_hash, jadi satu baris yang
+-- diubah atau dihapus diam-diam akan memutus rantai dan langsung ketahuan.
 CREATE TABLE IF NOT EXISTS consent_log (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id  TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   scope       TEXT NOT NULL,
   action      TEXT NOT NULL,
   ref         TEXT NOT NULL,
-  at          TEXT NOT NULL
+  at          TEXT NOT NULL,
+  prev_hash   TEXT NOT NULL DEFAULT '',
+  entry_hash  TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS verification_log (

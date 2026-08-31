@@ -58,9 +58,23 @@ export type ConsentEntry = {
   scope: string;
   /** Referensi pencatatan — berisi hash transaksi begitu ledger tersambung. */
   ref: string;
+  /** Sidik jari entri; tiap entri mengunci entri sebelumnya. */
+  entryHash: string;
 };
 
-export type ConsentPayload = { granted: ConsentState; log: ConsentEntry[] };
+/** Hasil pemeriksaan rantai audit di backend. */
+export type ConsentChain = {
+  intact: boolean;
+  entries: number;
+  head: string | null;
+  brokenAt?: number;
+};
+
+export type ConsentPayload = {
+  granted: ConsentState;
+  log: ConsentEntry[];
+  chain: ConsentChain;
+};
 
 const endpoint = `${apiUrl}/api/v1/consent`;
 

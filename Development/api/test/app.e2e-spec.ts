@@ -120,10 +120,22 @@ describe('e.id SSO callback (e2e)', () => {
     expect(res.body).toEqual({ success: false });
   });
 
-  it('acks the issuance webhook', async () => {
+  it('acks the issuance webhook that carries our private_code', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/callback/e-id/webhook')
-      .send({ issuance_id: 'iss-1', status: 'finished', credential_status: 'issued' })
+      .send({
+        private_code: PRIVATE_CODE,
+        issuance_id: 'iss-1',
+        status: 'finished',
+        credential_status: 'issued',
+      })
       .expect(201, { received: true });
+  });
+
+  it('refuses a webhook that does not carry our private_code', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/callback/e-id/webhook')
+      .send({ issuance_id: 'iss-2', status: 'finished' })
+      .expect(201, { received: false });
   });
 });

@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AccountsService } from '../src/accounts/accounts.service.js';
+import { RateLimitGuard } from '../src/common/rate-limit.guard.js';
 import { DatabaseService } from '../src/db/database.service.js';
 import { VerifierController } from '../src/verifier/verifier.controller.js';
 import { VerifierService } from '../src/verifier/verifier.service.js';
@@ -27,7 +28,7 @@ describe('Verifier QR login (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true })],
       controllers: [VerifierController],
-      providers: [DatabaseService, AccountsService, VerifierService],
+      providers: [RateLimitGuard, DatabaseService, AccountsService, VerifierService],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -113,6 +114,17 @@ describe('Verifier QR login (e2e)', () => {
       .get(`/api/v1/verifier/sessions/${session.id}`)
       .expect(200);
     expect(res.body.status).toBe('waiting');
+  });
+
+  it('membatasi laju pembuatan sesi supaya memori tidak bisa digelembungkan', async () => {
+    // Test lain di berkas ini sudah memakai sebagian jatah, jadi yang diuji
+    // adalah bahwa jatahnya memang habis — bukan angka pastinya.
+    let lastStatus = 0;
+    for (let attempt = 0; attempt < 40 && lastStatus !== 429; attempt += 1) {
+      lastStatus = (await request(app.getHttpServer()).post('/api/v1/verifier/sessions')).status;
+    }
+
+    expect(lastStatus).toBe(429);
   });
 
   it('tolak callback untuk sesi yang tidak pernah kita minta', async () => {

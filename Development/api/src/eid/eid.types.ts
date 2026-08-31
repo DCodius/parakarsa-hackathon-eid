@@ -40,6 +40,7 @@ export interface VerifyRequest {
 
 /** Body the gateway POSTs to default_webhook_url when a run finishes. */
 export interface IssuanceWebhook {
+  private_code?: string;
   issuance_id?: string;
   record_id?: string;
   status?: 'started' | 'processing' | 'finished' | 'failed';

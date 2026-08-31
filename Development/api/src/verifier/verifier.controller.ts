@@ -1,17 +1,19 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   NotFoundException,
   Param,
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { PK_SESSION_COOKIE } from '../accounts/accounts.service.js';
+import { assertPrivateCode } from '../common/private-code.js';
+import { RateLimit, RateLimitGuard } from '../common/rate-limit.guard.js';
 import { VerifierService } from './verifier.service.js';
 import type { PublicSession, VerificationCallback } from './verifier.types.js';
 
@@ -22,20 +24,25 @@ import type { PublicSession, VerificationCallback } from './verifier.types.js';
  * Gateway dan harus terjangkau dari internet (HTTPS saat di VPS).
  */
 @Controller()
+@UseGuards(RateLimitGuard)
 export class VerifierController {
   constructor(
     private readonly verifier: VerifierService,
     private readonly config: ConfigService,
   ) {}
 
-  /** QR baru untuk satu percobaan login. */
+  /** QR baru untuk satu percobaan login. Rute tanpa login, jadi paling ketat. */
   @Post('verifier/sessions')
+  // Longgar untuk satu ruangan di belakang satu IP wifi, ketat untuk skrip.
+  @RateLimit(30)
   create() {
     return this.verifier.createSession();
   }
 
   /** Dipanggil berkala oleh halaman login sampai holder menyetujui. */
   @Get('verifier/sessions/:id')
+  // Dipoll tiap 2 detik per pengunjung; angkanya harus muat untuk satu ruangan.
+  @RateLimit(600)
   read(
     @Param('id') id: string,
     @Req() request: Request,
@@ -51,6 +58,7 @@ export class VerifierController {
    * jadi tombol demo tidak akan pernah memalsukan verifikasi sungguhan.
    */
   @Post('verifier/sessions/:id/advance')
+  @RateLimit(120)
   advance(
     @Param('id') id: string,
     @Req() request: Request,
@@ -68,11 +76,13 @@ export class VerifierController {
    * POST, sementara callback OAuth SSO memakai GET pada path yang sama.
    */
   @Post('callback/e-id')
+  @RateLimit(120)
   callback(@Body() body: VerificationCallback) {
-    const expected = this.config.get<string>('EID_VERIFIER_CALLBACK_SECRET');
-    if (expected && body.private_code !== expected) {
-      throw new ForbiddenException('private_code tidak cocok');
-    }
+    assertPrivateCode(
+      this.config.get<string>('EID_VERIFIER_CALLBACK_SECRET'),
+      body.private_code,
+      'verifier callback',
+    );
 
     const session = this.verifier.recordResult(body);
     return { received: true, status: session.status };

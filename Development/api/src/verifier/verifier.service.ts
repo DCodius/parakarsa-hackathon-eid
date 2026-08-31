@@ -35,6 +35,12 @@ export class VerifierService {
   /** QR e.id berumur pendek; sesi yang lewat batas ini dianggap kedaluwarsa. */
   private static readonly SESSION_TTL_MS = 2 * 60 * 1000;
 
+  /**
+   * Batas atas sesi yang ditahan di memori. Pembatas laju sudah menjaga per IP,
+   * tapi lalu lintas dari banyak IP tetap tidak boleh menggelembungkan memori.
+   */
+  private static readonly MAX_SESSIONS = 500;
+
   /** Klaim yang diminta ParaKarsa — sama persis dengan PRD 3.2.2. */
   private static readonly REQUIRED_CLAIMS = [
     'name',
@@ -90,6 +96,14 @@ export class VerifierService {
     this.pruneExpired();
 
     const session = this.isLive ? await this.requestVerification() : this.simulatedSession();
+
+    // Map menjaga urutan penyisipan, jadi entri terlama ada di depan.
+    while (this.sessions.size >= VerifierService.MAX_SESSIONS) {
+      const oldest = this.sessions.keys().next().value;
+      if (oldest === undefined) break;
+      this.sessions.delete(oldest);
+    }
+
     this.sessions.set(session.id, session);
     return toPublic(session);
   }

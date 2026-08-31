@@ -14,6 +14,9 @@ async function bootstrap() {
   app.set('trust proxy', 1);
   app.use(cookieParser());
 
+  // Tidak ada endpoint yang butuh body besar; unggahan berkas ditangani frontend.
+  app.useBodyParser('json', { limit: '256kb' });
+
   // Produksi: hanya origin frontend yang terdaftar. Dev: port Next berpindah
   // setiap sesi, jadi localhost mana pun diterima daripada mematikan CORS.
   app.enableCors({

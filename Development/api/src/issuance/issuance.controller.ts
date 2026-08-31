@@ -1,5 +1,7 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { checkPrivateCode } from '../common/private-code.js';
+import { RateLimit, RateLimitGuard } from '../common/rate-limit.guard.js';
 import type { IssuanceWebhook, VerifyRequest } from '../eid/eid.types.js';
 
 /**
@@ -12,6 +14,7 @@ import type { IssuanceWebhook, VerifyRequest } from '../eid/eid.types.js';
  * Both are registered under Profile -> Update Profile in the e.id dashboard.
  */
 @Controller('callback/e-id')
+@UseGuards(RateLimitGuard)
 export class IssuanceController {
   private readonly logger = new Logger(IssuanceController.name);
 
@@ -22,12 +25,10 @@ export class IssuanceController {
    * present in `data` or the gateway fails the run even when success is true.
    */
   @Post('verify')
+  @RateLimit(120)
   verify(@Body() body: VerifyRequest) {
     const expected = this.config.get<string>('EID_SCHEMA_PRIVATE_CODE');
-
-    // private_code is a shared secret — a mismatch means the call isn't ours.
-    if (expected && body.private_code !== expected) {
-      this.logger.warn('Rejected verify call: private_code mismatch');
+    if (!checkPrivateCode(expected, body.private_code, 'issuance verify')) {
       return { success: false };
     }
 
@@ -49,9 +50,19 @@ export class IssuanceController {
     };
   }
 
-  /** Result notification. Ack fast — the gateway only needs a 2xx. */
+  /**
+   * Result notification. Ack fast — the gateway only needs a 2xx.
+   * Dijaga rahasia yang sama dengan /verify: tanpa itu, siapa pun bisa
+   * menyuntikkan catatan penerbitan palsu ke log kita.
+   */
   @Post('webhook')
+  @RateLimit(120)
   webhook(@Body() body: IssuanceWebhook) {
+    const expected = this.config.get<string>('EID_SCHEMA_PRIVATE_CODE');
+    if (!checkPrivateCode(expected, body.private_code, 'issuance webhook')) {
+      return { received: false };
+    }
+
     this.logger.log(
       `Auto-issuance ${body.issuance_id ?? '?'}: status=${body.status ?? '?'} ` +
         `kyc=${body.kyc_status ?? '?'} credential=${body.credential_id ?? 'none'}` +

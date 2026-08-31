@@ -1,0 +1,27 @@
+# Frontend Next.js. Hanya diakses lewat nginx, tidak pernah langsung dari luar.
+# Pasang: /etc/systemd/system/parakarsa-web.service
+[Unit]
+Description=ParaKarsa Web (Next.js)
+After=network-online.target parakarsa-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=parakarsa
+WorkingDirectory=/srv/parakarsa/Development/app
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Hanya dengarkan localhost; nginx yang menghadap internet.
+Environment=HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/parakarsa/Development/app/.next
+
+[Install]
+WantedBy=multi-user.target

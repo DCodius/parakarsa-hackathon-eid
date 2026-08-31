@@ -1,0 +1,27 @@
+# Backend NestJS — pemilik seluruh kredensial e.id.
+# Pasang: /etc/systemd/system/parakarsa-api.service
+[Unit]
+Description=ParaKarsa API (NestJS, e.id SSO + Verifier)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=parakarsa
+WorkingDirectory=/srv/parakarsa/Development/api
+EnvironmentFile=/srv/parakarsa/Development/api/.env
+ExecStart=/usr/bin/node dist/main.js
+Restart=always
+RestartSec=3
+# Database SQLite ikut di dalam WorkingDirectory; jangan sampai terhapus deploy.
+StateDirectory=parakarsa
+
+# Pengetatan dasar: proses ini tidak butuh akses tulis ke mana pun selain datanya.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/parakarsa/Development/api/data
+
+[Install]
+WantedBy=multi-user.target

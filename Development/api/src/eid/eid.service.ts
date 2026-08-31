@@ -10,6 +10,11 @@ import type {
 /**
  * Client for the e.id OAuth SSO API (docs.e.id, v1.1).
  *
+ * SSO lives on its own host, separate from the Issuer API:
+ *   OAuth SSO  sandbox https://api-dev.e.id      · prod https://api-wallet.e.id
+ *   Issuer API sandbox https://gateway-sandbox.e.id · prod https://gateway.e.id
+ * Pointing EID_BASE_URL at the Issuer host makes every call 403 at its nginx.
+ *
  *   1. GET  /oauth/client/:client_id/:callback_url  registered app name + scopes
  *   2. GET  /oauth/verify?client_id&callback_url    302 to the login/consent page
  *   3. POST /oauth/get-token                        single-use code -> Bearer token
@@ -25,7 +30,7 @@ export class EidService {
   constructor(private readonly config: ConfigService) {}
 
   private get base(): string {
-    return this.config.get<string>('EID_BASE_URL') ?? 'https://gateway-sandbox.e.id';
+    return this.config.get<string>('EID_BASE_URL') ?? 'https://api-dev.e.id';
   }
 
   private get api(): string {

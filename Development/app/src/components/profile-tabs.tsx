@@ -5,7 +5,7 @@ import { useState } from "react";
 import { artisan } from "@/lib/data";
 import { CertificateUpload } from "./certificate-upload";
 import { ConsentPanel } from "./consent-panel";
-import { DnaRadar, dnaAxes, epScore } from "./dna-radar";
+import { DnaRadar, dnaAxes, epPillars, epScore } from "./dna-radar";
 
 const tabs = ["Portfolios", "Liked", "Favourites", "Kredensial e.id"] as const;
 type Tab = (typeof tabs)[number];
@@ -43,7 +43,30 @@ export function ProfileTabs() {
               <span className="ml-auto text-sm text-ink-muted">EP Score {epScore}</span>
             </div>
             <DnaRadar />
-            <ul className="grid gap-3 border-t border-hairline pt-5 sm:grid-cols-3">
+
+            <ul className="grid gap-4 border-t border-hairline pt-5 sm:grid-cols-3">
+              {epPillars.map((pillar) => (
+                <li key={pillar.pillar} className="rounded-lg bg-canvas p-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold">{pillar.pillar}</span>
+                    <span className="display ml-auto text-xl text-primary">{pillar.score}</span>
+                  </div>
+                  <div className="mt-2 h-2 rounded-full bg-hairline">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${pillar.score}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-ink-muted">{pillar.axes.join(" · ")}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-ink-muted">
+              EP Score {epScore} adalah rata-rata ketiga pilar. Angka inilah yang membuka atau
+              mengunci tombol RFQ dan pendaftaran program.
+            </p>
+
+            <ul className="mt-5 grid gap-3 border-t border-hairline pt-5 sm:grid-cols-3">
               {dnaAxes.map((axis) => (
                 <li key={axis.axis}>
                   <div className="flex items-baseline gap-2 text-xs">

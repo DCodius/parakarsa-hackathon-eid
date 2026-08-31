@@ -288,6 +288,26 @@ export const artisan = {
   avatar: "/karya/k03.jpg",
   about:
     "Crafting Premium Brand Experiences. Kami studio kreatif yang berfokus mengangkat merek UMKM lewat desain yang matang, sistem identitas yang kuat, dan penceritaan visual yang meyakinkan.",
+  vision:
+    "Setiap UMKM Indonesia layak tampil sekelas merek global tanpa kehilangan akar ceritanya.",
+  mission:
+    "Mendampingi 500 pelaku usaha kecil membangun identitas merek yang konsisten, terdokumentasi, dan bisa dibuktikan ke mitra maupun investor.",
+  /** LinkedIn Company Page block dari PRD 2.1.4. */
+  facts: [
+    { label: "Tahun berdiri", value: "2019" },
+    { label: "Bentuk usaha", value: "CV" },
+    { label: "Ukuran tim", value: "12 orang" },
+    { label: "Spesialisasi", value: "Branding & kemasan UMKM" },
+  ],
+  /**
+   * Nomor dimask sampai empat digit terakhir — halaman profil bersifat publik,
+   * dan yang perlu dibaca calon mitra hanya status verifikasinya.
+   */
+  legality: [
+    { label: "NIB", value: "•••• •••• 4127", verified: true },
+    { label: "NPWP badan", value: "•••• •••• 8903", verified: true },
+    { label: "Merek terdaftar (DJKI)", value: "dalam proses", verified: false },
+  ],
   stats: [
     { value: "8", label: "Portfolio", tone: "ink" },
     { value: "2", label: "Sertifikasi", tone: "accent" },

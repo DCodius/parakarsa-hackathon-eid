@@ -19,6 +19,19 @@ export const dnaAxes = [
   { axis: "Kepatuhan Legal", score: 83, pillar: "Tata Kelola" },
 ] as const;
 
+/**
+ * PRD 2.1.4 — meteran komposisi EP: rata-rata tiap pilar, bukan tiap sumbu.
+ * Diturunkan dari dnaAxes supaya angka pilar dan radar tidak bisa berbeda.
+ */
+export const epPillars = ["Talenta", "Market", "Tata Kelola"].map((pillar) => {
+  const axes = dnaAxes.filter((axis) => axis.pillar === pillar);
+  return {
+    pillar,
+    score: Math.round(axes.reduce((sum, axis) => sum + axis.score, 0) / axes.length),
+    axes: axes.map((axis) => axis.axis),
+  };
+});
+
 export const epScore = Math.round(
   dnaAxes.reduce((sum, a) => sum + a.score, 0) / dnaAxes.length,
 );

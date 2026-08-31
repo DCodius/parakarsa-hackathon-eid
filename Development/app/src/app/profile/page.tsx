@@ -37,6 +37,54 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
 
             <SidebarCard heading="About">
               <p className="text-sm leading-relaxed text-ink-soft">{artisan.about}</p>
+              <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-relaxed text-ink-soft">
+                <span className="font-semibold text-ink">Visi.</span> {artisan.vision}
+              </p>
+              <p className="mt-3 border-l-2 border-primary pl-3 text-sm leading-relaxed text-ink-soft">
+                <span className="font-semibold text-ink">Misi.</span> {artisan.mission}
+              </p>
+            </SidebarCard>
+
+            <SidebarCard heading="Profil Usaha">
+              <dl className="space-y-2.5">
+                {artisan.facts.map((fact) => (
+                  <div key={fact.label} className="flex items-baseline gap-3 text-sm">
+                    <dt className="shrink-0 text-ink-muted">{fact.label}</dt>
+                    <dd className="ml-auto text-right font-medium">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </SidebarCard>
+
+            <SidebarCard heading="Legalitas">
+              <ul className="space-y-3">
+                {artisan.legality.map((doc) => (
+                  <li key={doc.label} className="flex items-baseline gap-3 text-sm">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      {doc.verified ? (
+                        <VerifiedTick className="size-3.5 shrink-0" />
+                      ) : (
+                        <span
+                          className="size-3.5 shrink-0 rounded-full border border-dashed border-ink-muted"
+                          aria-hidden
+                        />
+                      )}
+                      <span className="truncate">{doc.label}</span>
+                    </span>
+                    <span
+                      className={`ml-auto shrink-0 font-medium ${
+                        doc.verified ? "" : "text-ink-muted"
+                      }`}
+                    >
+                      {doc.value}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 border-t border-hairline pt-3 text-xs text-ink-muted">
+                Nomor ditampilkan sebagian. Mitra memverifikasi lewat kredensial e.id, bukan lewat
+                halaman ini.
+              </p>
             </SidebarCard>
 
             <SidebarCard heading="Sertifikasi">

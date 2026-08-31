@@ -144,3 +144,8 @@ vite.config.ts.timestamp-*
 
 # All dot-directories
 .*/
+
+# ...except the shared dev-server config the launch tooling reads.
+!.claude/
+.claude/*
+!.claude/launch.json

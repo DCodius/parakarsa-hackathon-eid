@@ -9,6 +9,8 @@ import { AuthController } from '../src/auth/auth.controller.js';
 import { ConsentController } from '../src/consent/consent.controller.js';
 import { ConsentService } from '../src/consent/consent.service.js';
 import { DatabaseService } from '../src/db/database.service.js';
+import { DnaPortfolioService } from '../src/profile/dna-portfolio.service.js';
+import { ProfileController } from '../src/profile/profile.controller.js';
 import { EidService } from '../src/eid/eid.service.js';
 import { VerificationGateway } from '../src/verifier/verification.gateway.js';
 import { VerifierController } from '../src/verifier/verifier.controller.js';
@@ -33,13 +35,14 @@ describe('Akun, sesi, dan consent (e2e)', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true })],
-      controllers: [VerifierController, AuthController, ConsentController],
+      controllers: [VerifierController, AuthController, ConsentController, ProfileController],
       providers: [
         DatabaseService,
         AccountsService,
         ConsentService,
         VerifierService,
         VerificationGateway,
+        DnaPortfolioService,
         EidService,
       ],
     })
@@ -189,6 +192,53 @@ describe('Akun, sesi, dan consent (e2e)', () => {
       .expect(200);
     expect(chain.body.intact).toBe(false);
     expect(chain.body.brokenAt).toBeGreaterThan(0);
+  });
+
+  it('menerbitkan DNA Portfolio sebagai berkas PDF sungguhan', async () => {
+    const cookie = await signIn();
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/profile/dna.pdf')
+      .set('Cookie', cookie)
+      .expect(200)
+      .expect('Content-Type', 'application/pdf');
+
+    const pdf = res.body as Buffer;
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(pdf.length).toBeGreaterThan(1000);
+
+    const text = pdf.toString('latin1');
+    // Judul dokumen ikut di metadata dan memakai nama pemilik.
+    expect(text).toContain('DNA Portfolio');
+    // NIK utuh tidak boleh pernah muncul di berkas yang beredar bebas.
+    expect(text).not.toContain('3204012345678901');
+  });
+
+  it('menghormati pencabutan consent saat menerbitkan PDF', async () => {
+    const cookie = await signIn();
+    await request(app.getHttpServer())
+      .put('/api/v1/consent/ep')
+      .set('Cookie', cookie)
+      .send({ granted: false })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/profile/dna.pdf')
+      .set('Cookie', cookie)
+      .expect(200);
+
+    // Bagian skor diganti keterangan, bukan diam-diam dihilangkan.
+    expect((res.body as Buffer).length).toBeGreaterThan(1000);
+
+    await request(app.getHttpServer())
+      .put('/api/v1/consent/ep')
+      .set('Cookie', cookie)
+      .send({ granted: true })
+      .expect(200);
+  });
+
+  it('menolak menerbitkan PDF tanpa sesi', async () => {
+    await request(app.getHttpServer()).get('/api/v1/profile/dna.pdf').expect(401);
   });
 
   it('menolak akses consent tanpa sesi', async () => {

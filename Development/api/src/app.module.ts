@@ -8,6 +8,8 @@ import { ConsentService } from './consent/consent.service.js';
 import { DatabaseService } from './db/database.service.js';
 import { EidService } from './eid/eid.service.js';
 import { HealthController } from './health.controller.js';
+import { DnaPortfolioService } from './profile/dna-portfolio.service.js';
+import { ProfileController } from './profile/profile.controller.js';
 import { IssuanceController } from './issuance/issuance.controller.js';
 import { VerifierController } from './verifier/verifier.controller.js';
 import { VerificationGateway } from './verifier/verification.gateway.js';
@@ -15,7 +17,7 @@ import { VerifierService } from './verifier/verifier.service.js';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true })],
-  controllers: [AuthController, IssuanceController, VerifierController, ConsentController, HealthController],
+  controllers: [AuthController, IssuanceController, VerifierController, ConsentController, HealthController, ProfileController],
   providers: [
     RateLimitGuard,
     DatabaseService,
@@ -24,6 +26,7 @@ import { VerifierService } from './verifier/verifier.service.js';
     EidService,
     VerifierService,
     VerificationGateway,
+    DnaPortfolioService,
   ],
 })
 export class AppModule {}

@@ -42,12 +42,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
    * ADD COLUMN IF NOT EXISTS, jadi kolomnya diperiksa dulu.
    */
   private migrate(): void {
-    const columns = this.db.prepare('PRAGMA table_info(consent_log)').all() as { name: string }[];
+    const consentColumns = this.db.prepare('PRAGMA table_info(consent_log)').all() as {
+      name: string;
+    }[];
     for (const column of ['prev_hash', 'entry_hash']) {
-      if (!columns.some((existing) => existing.name === column)) {
+      if (!consentColumns.some((existing) => existing.name === column)) {
         this.db.exec(`ALTER TABLE consent_log ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
         this.logger.log(`Kolom consent_log.${column} ditambahkan`);
       }
+    }
+
+    const accountColumns = this.db.prepare('PRAGMA table_info(accounts)').all() as {
+      name: string;
+    }[];
+    if (!accountColumns.some((existing) => existing.name === 'data_key')) {
+      this.db.exec('ALTER TABLE accounts ADD COLUMN data_key TEXT');
+      this.logger.log('Kolom accounts.data_key ditambahkan');
     }
   }
 
@@ -71,6 +81,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   nik_hash     TEXT UNIQUE,
   nik_masked   TEXT,
   kyc_vendor   TEXT,
+  -- Kunci data akun ini, tersimpan terbungkus kunci induk (envelope encryption).
+  data_key     TEXT,
   tier         INTEGER NOT NULL DEFAULT 0,
   did_key      TEXT,
   simulated    INTEGER NOT NULL DEFAULT 0,

@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'node:crypto';
+import { Envelope, isSealed, loadMasterKey } from '../common/envelope.js';
 import { DatabaseService } from '../db/database.service.js';
 import type { SignatureProof, VerifiedClaims } from '../verifier/verifier.types.js';
 
@@ -19,6 +20,11 @@ export interface Account {
   simulated: number;
 }
 
+/** Kolom yang isinya data pribadi, dan karena itu tidak boleh tersimpan polos. */
+const SEALED_FIELDS = ['fullname', 'email', 'phone', 'nik_masked'] as const;
+
+type StoredAccount = Account & { data_key?: string };
+
 /** Sesi ParaKarsa berumur satu jam, sama dengan cookie OAuth SSO. */
 const SESSION_TTL_MS = 60 * 60 * 1000;
 
@@ -28,13 +34,22 @@ const SESSION_TTL_MS = 60 * 60 * 1000;
  * kali pun pemiliknya login ulang.
  */
 @Injectable()
-export class AccountsService {
+export class AccountsService implements OnModuleInit {
   private readonly logger = new Logger(AccountsService.name);
+
+  private readonly envelope: Envelope;
 
   constructor(
     private readonly database: DatabaseService,
     private readonly config: ConfigService,
-  ) {}
+  ) {
+    this.envelope = new Envelope(
+      loadMasterKey(
+        this.config.get<string>('PARAKARSA_MASTER_KEY'),
+        this.config.get<string>('NODE_ENV') === 'production',
+      ),
+    );
+  }
 
   /**
    * NIK di-hash bersama pepper server: cukup untuk mengenali akun yang sama,
@@ -56,11 +71,16 @@ export class AccountsService {
       .get(hash) as { id: string } | undefined;
 
     const id = existing?.id ?? randomUUID();
+    // Akun lama memakai kunci datanya sendiri; akun baru mendapat kunci baru.
+    const wrapped = this.wrappedKeyFor(id);
+    const key = this.envelope.unwrapDataKey(wrapped);
+    const seal = (value?: string | null) => this.envelope.encryptField(key, value);
+
     this.database.db
       .prepare(
         `INSERT INTO accounts (id, fullname, email, phone, nik_hash, nik_masked, kyc_vendor,
-                               tier, did_key, simulated, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               data_key, tier, did_key, simulated, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = excluded.fullname, email = excluded.email, phone = excluded.phone,
            nik_masked = excluded.nik_masked, kyc_vendor = excluded.kyc_vendor,
@@ -68,12 +88,13 @@ export class AccountsService {
       )
       .run(
         id,
-        claims.name ?? null,
-        claims.email ?? null,
-        claims.phone_number ?? null,
+        seal(claims.name),
+        seal(claims.email),
+        seal(claims.phone_number),
         hash,
-        maskNik(nik),
+        seal(maskNik(nik)),
         claims.kyc_vendor ?? null,
+        wrapped,
         // NIK terverifikasi vendor KYC berarti tier 2 (identitas formal).
         nik ? 2 : 1,
         options.did ?? null,
@@ -86,9 +107,71 @@ export class AccountsService {
     return this.byId(id)!;
   }
 
+  onModuleInit(): void {
+    this.sealLegacyRows();
+  }
+
   byId(id: string): Account | null {
-    return (this.database.db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) ??
-      null) as Account | null;
+    const row = this.database.db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as
+      | StoredAccount
+      | undefined;
+    return row ? this.reveal(row) : null;
+  }
+
+  /** Membuka kolom yang tersegel; baris lama yang masih polos lewat apa adanya. */
+  private reveal(row: StoredAccount): Account {
+    if (!row.data_key) return row;
+
+    const key = this.envelope.unwrapDataKey(row.data_key);
+    const account = { ...row };
+    for (const field of SEALED_FIELDS) {
+      account[field] = this.envelope.decryptField(key, row[field]);
+    }
+    return account;
+  }
+
+  /** Kunci data akun; dibuatkan sekali lalu dipakai ulang seumur akun. */
+  private wrappedKeyFor(id: string): string {
+    const row = this.database.db.prepare('SELECT data_key FROM accounts WHERE id = ?').get(id) as
+      | { data_key?: string }
+      | undefined;
+    return row?.data_key ?? this.envelope.createDataKey().wrapped;
+  }
+
+  /**
+   * Menyegel baris yang tertinggal dari sebelum enkripsi dipasang. Dijalankan
+   * sekali saat modul siap; baris yang sudah tersegel dilewati.
+   */
+  sealLegacyRows(): number {
+    const rows = this.database.db
+      .prepare('SELECT * FROM accounts')
+      .all() as unknown as StoredAccount[];
+    let sealed = 0;
+
+    for (const row of rows) {
+      const alreadySealed = SEALED_FIELDS.every((field) => row[field] == null || isSealed(row[field]));
+      if (row.data_key && alreadySealed) continue;
+
+      const wrapped = row.data_key ?? this.envelope.createDataKey().wrapped;
+      const key = this.envelope.unwrapDataKey(wrapped);
+      this.database.db
+        .prepare(
+          `UPDATE accounts SET fullname = ?, email = ?, phone = ?, nik_masked = ?, data_key = ?
+           WHERE id = ?`,
+        )
+        .run(
+          this.envelope.encryptField(key, row.fullname),
+          this.envelope.encryptField(key, row.email),
+          this.envelope.encryptField(key, row.phone),
+          this.envelope.encryptField(key, row.nik_masked),
+          wrapped,
+          row.id,
+        );
+      sealed += 1;
+    }
+
+    if (sealed > 0) this.logger.log(`${sealed} akun lama disegel dengan envelope encryption`);
+    return sealed;
   }
 
   createSession(accountId: string): string {

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { PrintButton } from "@/components/print-button";
-import { VerifiedTick } from "@/components/ui";
+import { ButtonLink, VerifiedTick } from "@/components/ui";
 import { artisan } from "@/lib/data";
 import { dnaAxes, epPillars, epScore, maskNik } from "@/lib/dna";
-import { getSession } from "@/lib/session";
+import { apiUrl, getSession } from "@/lib/session";
 
 /**
  * FR-03 Auto-Generate DNA Portfolio. Dokumen ini tidak pernah diisi manual:
@@ -46,7 +46,14 @@ export default async function DnaPortfolioPage() {
         <Link href="/profile" className="text-sm text-ink-soft hover:text-ink">
           ← Kembali ke profil
         </Link>
-        <PrintButton />
+        {session ? (
+          // Berkas PDF diterbitkan backend dari kredensial, bukan hasil cetak layar.
+          <ButtonLink href={`${apiUrl}/api/v1/profile/dna.pdf`} prefetch={false} download>
+            Unduh PDF
+          </ButtonLink>
+        ) : (
+          <PrintButton />
+        )}
       </div>
 
       {!session && (

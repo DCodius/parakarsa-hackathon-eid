@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { LoginIssueBanner } from "@/components/login-issue-banner";
 import { OnchainProof } from "@/components/onchain-proof";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { ButtonLink, VerifiedTick } from "@/components/ui";
@@ -6,7 +7,7 @@ import { artisan } from "@/lib/data";
 
 import { getSession, loginHref, type EidProfile } from "@/lib/session";
 
-const tiers = ["Belum terverifikasi", "Tier 1 · Email & telepon", "Tier 2 · Identitas formal"];
+const tiers = ["Belum terverifikasi", "Membership L1", "Membership L2 / KYC"];
 
 const statTone: Record<string, string> = {
   ink: "text-ink",
@@ -18,6 +19,7 @@ const statTone: Record<string, string> = {
 export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
   const [session, params] = await Promise.all([getSession(), searchParams]);
   const error = typeof params.error === "string" ? params.error : null;
+  const code = typeof params.code === "string" ? params.code : null;
 
   return (
     <>
@@ -26,11 +28,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pb-16 md:px-8">
-        {error && (
-          <p className="mt-6 rounded-xl border border-accent bg-accent-50 px-5 py-4 text-sm text-accent">
-            Login e.id gagal: {error}
-          </p>
-        )}
+        <LoginIssueBanner code={code} error={error} />
 
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="-mt-20 space-y-5">
@@ -200,9 +198,18 @@ function IdentityCard({ session }: { session: EidProfile | null }) {
             {tiers[tier] ?? tiers[0]}
           </p>
           <dl className="mt-4 space-y-2 border-t border-hairline pt-4 text-left">
+            {profile?.nik && <Row term="NIK" value={profile.nik} />}
             <Row term="Telepon" value={maskPhone(profile?.countryphonecode, profile?.phonenumber)} />
-            <Row term="Sumber" value="e.id OAuth SSO" />
+            <Row
+              term="Sumber"
+              value={session.demo ? "Verifikasi QR (simulasi)" : "e.id OAuth SSO"}
+            />
           </dl>
+          {!profile?.nik && (
+            <p className="mt-3 rounded-lg bg-canvas px-3 py-2 text-left text-[11px] leading-relaxed text-ink-muted">
+              Belum terverifikasi NIK — login QR untuk tingkat 2.
+            </p>
+          )}
           <ButtonLink href="/profile/dna" tone="outline" className="mt-4 w-full">
             Unduh DNA Portfolio (PDF)
           </ButtonLink>

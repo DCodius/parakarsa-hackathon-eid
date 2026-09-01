@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req, Res, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AccountsService, PK_SESSION_COOKIE, type Account } from '../accounts/accounts.service.js';
@@ -39,21 +39,42 @@ export class AuthController {
     if (!code) {
       // Echo what e.id actually sent, so a param-name mismatch is visible.
       const query = new URLSearchParams(req.query as Record<string, string>).toString();
-      return res.redirect(this.failure(`Tidak ada authorization code. e.id mengirim: ${query || '(kosong)'}`));
+      return res.redirect(
+        this.failure(
+          `Tidak ada authorization code. e.id mengirim: ${query || '(kosong)'}`,
+          'eid',
+        ),
+      );
     }
 
     try {
       const { token } = await this.eid.exchangeCode(code);
-      res.cookie(SESSION_COOKIE, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: req.protocol === 'https',
-        path: '/',
-        maxAge: 60 * 60 * 1000,
-      });
+      // eid_token tetap dipasang untuk kompatibilitas dengan sesi lama; sesi
+      // ParaKarsa (pk_session) menyusul di bawah bila akun berhasil diterbitkan.
+      this.setCookie(res, SESSION_COOKIE, token, req);
+
+      const profile = await this.eid.getProfile(token);
+      if (!profile?.email) {
+        return res.redirect(
+          this.failure(
+            'Profil e.id tidak membawa email, sehingga akun ParaKarsa tidak bisa diterbitkan.',
+            'no-email',
+          ),
+        );
+      }
+
+      const account = this.accounts.upsertFromSsoProfile(profile);
+      if (!account) {
+        return res.redirect(
+          this.failure('Akun ParaKarsa tidak bisa diterbitkan dari profil ini.', 'no-email'),
+        );
+      }
+
+      // Akun terbit → sesi ParaKarsa dibuat dan dikunci di cookie httpOnly.
+      this.setCookie(res, PK_SESSION_COOKIE, this.accounts.createSession(account.id), req);
       return res.redirect(`${this.appUrl}/profile`);
     } catch (error) {
-      return res.redirect(this.failure((error as Error).message));
+      return res.redirect(this.failure((error as Error).message, this.errorCode(error)));
     }
   }
 
@@ -84,10 +105,30 @@ export class AuthController {
     res.redirect(303, this.appUrl);
   }
 
-  private failure(message: string): string {
+  private failure(message: string, code: string): string {
     const url = new URL('/profile', this.appUrl);
     url.searchParams.set('error', message);
+    url.searchParams.set('code', code);
     return url.toString();
+  }
+
+  /** Gateway yang terblokir (403 sandbox) atau mati = code gateway, sisanya eid. */
+  private errorCode(error: unknown): string {
+    return error instanceof ServiceUnavailableException ? 'gateway' : 'eid';
+  }
+
+  /**
+   * Cookie sesi selalu httpOnly, berumur satu jam, dan sama untuk kedua alur
+   * (QR verifier & SSO) supaya frontend cukup membaca satu nama.
+   */
+  private setCookie(res: Response, name: string, value: string, req: Request): void {
+    res.cookie(name, value, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: req.protocol === 'https',
+      path: '/',
+      maxAge: 60 * 60 * 1000,
+    });
   }
 }
 

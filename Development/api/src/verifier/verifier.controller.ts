@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -9,7 +10,6 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { PK_SESSION_COOKIE } from '../accounts/accounts.service.js';
 import { assertPrivateCode } from '../common/private-code.js';
@@ -26,10 +26,7 @@ import type { PublicSession, VerificationCallback } from './verifier.types.js';
 @Controller()
 @UseGuards(RateLimitGuard)
 export class VerifierController {
-  constructor(
-    private readonly verifier: VerifierService,
-    private readonly config: ConfigService,
-  ) {}
+  constructor(private readonly verifier: VerifierService) {}
 
   /** QR baru untuk satu percobaan login. Rute tanpa login, jadi paling ketat. */
   @Post('verifier/sessions')
@@ -78,11 +75,14 @@ export class VerifierController {
   @Post('callback/e-id')
   @RateLimit(120)
   callback(@Body() body: VerificationCallback) {
-    assertPrivateCode(
-      this.config.get<string>('EID_VERIFIER_CALLBACK_SECRET'),
-      body.private_code,
-      'verifier callback',
-    );
+    const secret = this.verifier.callbackSecret;
+    // Jaga-jaga lapis kedua: verifier live tanpa rahasia tidak boleh menerima
+    // callback apa pun, sekalipun validasi boot di produksi sudah menolak.
+    // Mode simulasi (isLive false) tetap longgar supaya alur demo jalan.
+    if (this.verifier.isLive && !secret) {
+      throw new ForbiddenException('private_code tidak cocok');
+    }
+    assertPrivateCode(secret, body.private_code, 'verifier callback');
 
     const session = this.verifier.recordResult(body);
     return { received: true, status: session.status };

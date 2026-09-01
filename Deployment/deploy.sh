@@ -21,6 +21,17 @@ for env in "$API/.env" "$WEB/.env.production"; do
   [ -f "$env" ] || { echo "Berkas $env belum ada. Salin dari contoh di Deployment/." >&2; exit 1; }
 done
 
+step "Memeriksa rahasia produksi backend"
+# Gagal lebih awal daripada membiarkan API menyala tanpa pepper NIK atau kunci
+# induk: keduanya dibutuhkan di produksi, dan tanpa itu data tidak aman.
+for key in NIK_PEPPER PARAKARSA_MASTER_KEY; do
+  value="$(grep -E "^${key}=" "$API/.env" | head -n1 | cut -d= -f2-)"
+  if [ -z "$(printf '%s' "$value" | tr -d '[:space:]')" ]; then
+    echo "Rahasia ${key} kosong di ${API}/.env. Isi dulu (mis. openssl rand -hex 32)." >&2
+    exit 1
+  fi
+done
+
 step "Membangun backend"
 npm --prefix "$API" ci
 npm --prefix "$API" run build

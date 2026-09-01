@@ -1,4 +1,4 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { readFileSync, rmSync } from 'node:fs';
 import { AccountsService } from '../src/accounts/accounts.service.js';

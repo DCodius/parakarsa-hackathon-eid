@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { EidGatewayHint } from "@/components/eid-gateway-hint";
 import { EidQrPanel } from "@/components/eid-qr-panel";
 import { ButtonLink, VerifiedTick } from "@/components/ui";
 import { getSession, loginHref } from "@/lib/session";
@@ -47,6 +48,7 @@ export default async function LoginPage() {
           <p className="mt-2.5 text-center text-xs text-ink-muted">
             Anda akan diarahkan ke halaman consent e.id, lalu kembali ke sini.
           </p>
+          <EidGatewayHint />
 
           <p className="mt-8 border-t border-hairline pt-6 text-sm text-ink-soft">
             Belum punya Dompet e.id? Unduh aplikasinya, daftar sekali, lalu pindai QR di atas —

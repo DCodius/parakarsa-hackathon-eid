@@ -59,6 +59,16 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       this.db.exec('ALTER TABLE accounts ADD COLUMN data_key TEXT');
       this.logger.log('Kolom accounts.data_key ditambahkan');
     }
+    if (!accountColumns.some((existing) => existing.name === 'sso_email_hash')) {
+      this.db.exec('ALTER TABLE accounts ADD COLUMN sso_email_hash TEXT');
+      this.logger.log('Kolom accounts.sso_email_hash ditambahkan');
+    }
+    // UNIQUE lewat index, bukan lewat kolom, supaya ALTER TABLE tetap bisa
+    // memuat database lama. NULL dibolehkan banyak, jadi akun verifier (tanpa
+    // SSO) dan akun SSO (tanpa NIK) tidak saling menabrak.
+    this.db.exec(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_sso_email_hash ON accounts(sso_email_hash)',
+    );
   }
 
   onModuleDestroy(): void {
@@ -79,6 +89,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   email        TEXT,
   phone        TEXT,
   nik_hash     TEXT UNIQUE,
+  -- Sidik jari alamat email login SSO (kunci akun, terpisah dari NIK).
+  sso_email_hash TEXT,
   nik_masked   TEXT,
   kyc_vendor   TEXT,
   -- Kunci data akun ini, tersimpan terbungkus kunci induk (envelope encryption).

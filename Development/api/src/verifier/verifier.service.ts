@@ -1,4 +1,4 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { AccountsService } from '../accounts/accounts.service.js';
@@ -28,7 +28,7 @@ import type {
  * ditandai `simulated` supaya UI bisa mengumumkannya.
  */
 @Injectable()
-export class VerifierService {
+export class VerifierService implements OnModuleInit {
   private readonly logger = new Logger(VerifierService.name);
   private readonly sessions = new Map<string, VerificationSession>();
   private token?: { value: string; expiresAt: number };
@@ -55,6 +55,26 @@ export class VerifierService {
     private readonly accounts: AccountsService,
     private readonly gateway: VerificationGateway,
   ) {}
+
+  onModuleInit(): void {
+    // Verifier live tapi tanpa rahasia callback = siapa pun bisa memalsukan
+    // callback dan menerbitkan akun. Di produksi ini harus gagal cepat di boot,
+    // mengikuti pola loadMasterKey di common/envelope.ts.
+    if (this.isLive && !this.callbackSecret && this.config.get<string>('NODE_ENV') === 'production') {
+      throw new Error(
+        'EID_VERIFIER_CALLBACK_SECRET belum diisi. Verifier sedang dalam mode live ' +
+          '(EID_VERIFIER_CLIENT_ID, EID_VERIFIER_CLIENT_SECRET, dan EID_VERIFIER_SCHEMA_ID ' +
+          'terisi), tetapi rahasia callback kosong — tanpa rahasia ini siapa pun bisa ' +
+          'memalsukan callback dan menerbitkan akun. Buat dengan: openssl rand -hex 32',
+      );
+    }
+  }
+
+  /** Rahasia bersama callback e.id. String kosong dianggap belum diisi. */
+  get callbackSecret(): string | undefined {
+    const secret = this.config.get<string>('EID_VERIFIER_CALLBACK_SECRET') ?? '';
+    return secret.trim() === '' ? undefined : secret.trim();
+  }
 
   private get base(): string {
     return this.config.get<string>('EID_VERIFIER_BASE_URL') ?? 'https://gateway-sandbox.e.id';

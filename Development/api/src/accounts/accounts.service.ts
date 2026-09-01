@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { Envelope, isSealed, loadMasterKey } from '../common/envelope.js';
 import { DatabaseService } from '../db/database.service.js';
+import type { EidProfile } from '../eid/eid.types.js';
 import type { SignatureProof, VerifiedClaims } from '../verifier/verifier.types.js';
 
 /** Cookie sesi ParaKarsa — hasil verifikasi kredensial, bukan kata sandi. */
@@ -49,6 +50,37 @@ export class AccountsService implements OnModuleInit {
         this.config.get<string>('NODE_ENV') === 'production',
       ),
     );
+    this.assertNikPepperConfigured();
+  }
+
+  private get production(): boolean {
+    return this.config.get<string>('NODE_ENV') === 'production';
+  }
+
+  /**
+   * Pepper untuk sidik jari NIK. String kosong diperlakukan sama dengan belum
+   * diisi (=> bukan bug yang lolos dari `??`), lalu di luar produksi jatuh ke
+   * nilai dev supaya `npm run start:dev` tidak menuntut persiapan.
+   */
+  private get nikPepper(): string {
+    const configured = (this.config.get<string>('NIK_PEPPER') ?? '').trim();
+    return configured === '' ? 'parakarsa-dev-pepper' : configured;
+  }
+
+  /**
+   * Di produksi pepper wajib berupa string acak >= 32 karakter. Menggantinya
+   * setelah ada akun membuat semua akun lama tidak dikenali (nik_hash berbeda).
+   */
+  private assertNikPepperConfigured(): void {
+    const configured = (this.config.get<string>('NIK_PEPPER') ?? '').trim();
+    if (this.production && (configured === '' || configured.length < 32)) {
+      throw new Error(
+        'NIK_PEPPER belum diisi atau lebih pendek dari 32 karakter. Di produksi pepper ' +
+          'wajib berupa string acak dan JANGAN pernah diganti setelah ada akun — ' +
+          'menggantinya membuat seluruh akun lama tidak dikenali lagi. ' +
+          'Buat dengan: openssl rand -hex 32',
+      );
+    }
   }
 
   /**
@@ -56,8 +88,18 @@ export class AccountsService implements OnModuleInit {
    * tidak cukup untuk membaca ulang nomornya dari isi database.
    */
   private fingerprint(nik: string): string {
-    const pepper = this.config.get<string>('NIK_PEPPER') ?? 'parakarsa-dev-pepper';
+    const pepper = this.nikPepper;
     return createHash('sha256').update(`${pepper}:${nik.replace(/\D/g, '')}`).digest('hex');
+  }
+
+  /**
+   * Sidik jari alamat email login SSO — sengaja dibedakan dari sidik jari NIK.
+   * Memiliki email hanya membuktikan kepemilikan alamat, bukan identitas formal,
+   * jadi ia TIDAK memakai NIK_PEPPER (tingkat kepercayaan yang berbeda).
+   */
+  private ssoEmailFingerprint(email: string): string {
+    const normalized = email.trim().toLowerCase();
+    return createHash('sha256').update(`sso:${normalized}`).digest('hex');
   }
 
   /** TC-EID-01 — akun terbentuk otomatis dari klaim yang disetujui holder. */
@@ -105,6 +147,63 @@ export class AccountsService implements OnModuleInit {
 
     this.logger.log(`Akun ${existing ? 'diperbarui' : 'dibuat'} dari kredensial e.id: ${id}`);
     return this.byId(id)!;
+  }
+
+  /**
+   * TC-EID-01 untuk alur OAuth SSO — akun ParaKarsa terbit dari profil e.id.
+   * Kunci pengenalnya alamat email (bukan NIK), jadi satu email = satu akun
+   * berapa kali pun penggunanya login ulang. Untuk SNI lebih rendah daripada
+   * verifikasi QR karena tidak pernah ada identitas formal (nik tetap null).
+   *
+   * Tanpa email tidak ada identitas yang bisa dipakai sebagai kunci; daripada
+   * membuat akun-akun sekali pakai, kembalikan null dan biarkan pemanggil
+   * memutuskan (biasanya mengarahkan ulang dengan pesan yang jelas).
+   */
+  upsertFromSsoProfile(profile: EidProfile, options: { did?: string } = {}): Account | null {
+    const email = profile.email?.trim().toLowerCase();
+    if (!email) return null;
+
+    const hash = this.ssoEmailFingerprint(email);
+    const now = new Date().toISOString();
+
+    const existing = this.database.db
+      .prepare('SELECT id FROM accounts WHERE sso_email_hash = ?')
+      .get(hash) as { id: string } | undefined;
+
+    const id = existing?.id ?? randomUUID();
+    // Akun lama memakai kunci datanya sendiri; akun baru mendapat kunci baru.
+    const wrapped = this.wrappedKeyFor(id);
+    const key = this.envelope.unwrapDataKey(wrapped);
+    const seal = (value?: string | null) => this.envelope.encryptField(key, value);
+
+    this.database.db
+      .prepare(
+        `INSERT INTO accounts (id, fullname, email, phone, sso_email_hash, nik_hash, nik_masked,
+                               data_key, tier, did_key, simulated, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           fullname = excluded.fullname, email = excluded.email, phone = excluded.phone,
+           tier = excluded.tier, did_key = excluded.did_key, updated_at = excluded.updated_at`,
+      )
+      .run(
+        id,
+        seal(profile.profile?.fullname),
+        seal(email),
+        seal(profile.profile?.phonenumber),
+        hash,
+        null,
+        null,
+        wrapped,
+        // SSO membuktikan kepemilikan email minimum, jadi tier tidak pernah 0.
+        ssoTier(profile.profile?.tier),
+        options.did ?? null,
+        0,
+        now,
+        now,
+      );
+
+    this.logger.log(`Akun ${existing ? 'diperbarui' : 'dibuat'} dari profil SSO e.id: ${id}`);
+    return this.byId(id);
   }
 
   onModuleInit(): void {
@@ -175,6 +274,7 @@ export class AccountsService implements OnModuleInit {
   }
 
   createSession(accountId: string): string {
+    this.pruneExpiredSessions();
     const token = randomUUID();
     const now = Date.now();
     this.database.db
@@ -186,6 +286,13 @@ export class AccountsService implements OnModuleInit {
         new Date(now + SESSION_TTL_MS).toISOString(),
       );
     return token;
+  }
+
+  /** Sesi yang kedaluwarsa dicabut saat sesi baru lahir — satu DELETE, tanpa cron. */
+  private pruneExpiredSessions(): void {
+    this.database.db
+      .prepare('DELETE FROM sessions WHERE expires_at < ?')
+      .run(new Date(Date.now()).toISOString());
   }
 
   /** Sesi kedaluwarsa dihapus saat ditemui, jadi tidak perlu tugas pembersih. */
@@ -250,4 +357,16 @@ export function maskNik(nik: string): string {
   const digits = nik.replace(/\D/g, '');
   if (digits.length < 8) return '••••';
   return `${digits.slice(0, 4)} •••• •••• ${digits.slice(-4)}`;
+}
+
+/**
+ * Tier akun SSO. e.id mengirim 0 = belum terverifikasi, tapi login SSO sudah
+ * membuktikan kepemilikan email (dan mungkin telepon), jadi kenaikan ke tier 1
+ * bisa dipastikan. Tier 2 hanya bila identitas formal (NIK) ada — SSO tidak
+ * memberikannya, sehingga nilai atasnya dibatasi ke 2.
+ */
+function ssoTier(raw: number | undefined): number {
+  const tier = raw ?? 1;
+  if (tier < 1) return 1;
+  return Math.min(tier, 2);
 }
